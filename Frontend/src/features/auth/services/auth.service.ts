@@ -7,7 +7,6 @@ export interface LoginPayload {
 }
 
 export async function login(payload: LoginPayload): Promise<AuthResponse> {
-  // TODO: implementar autenticação
   const { data } = await api.post<AuthResponse>('/auth', payload);
   return data;
 }
