@@ -20,20 +20,33 @@ interface AuthContextValue {
 
 const AuthContext = createContext<AuthContextValue | undefined>(undefined);
 
+function getStoredSession(): { token: string | null; client: Client | null } {
+  const storedToken = localStorage.getItem(TOKEN_KEY);
+  const storedClient = localStorage.getItem(CLIENT_KEY);
+
+  if (storedToken && storedClient) {
+    return {
+      token: storedToken,
+      client: JSON.parse(storedClient) as Client,
+    };
+  }
+
+  return { token: null, client: null };
+}
+
 export function AuthProvider({ children }: { children: ReactNode }) {
-  const [token, setToken] = useState<string | null>(null);
-  const [client, setClient] = useState<Client | null>(null);
+  const [token, setToken] = useState<string | null>(
+    () => getStoredSession().token,
+  );
+  const [client, setClient] = useState<Client | null>(
+    () => getStoredSession().client,
+  );
 
   useEffect(() => {
-    const storedToken = localStorage.getItem(TOKEN_KEY);
-    const storedClient = localStorage.getItem(CLIENT_KEY);
-
-    if (storedToken && storedClient) {
-      setToken(storedToken);
-      setClient(JSON.parse(storedClient) as Client);
-      api.defaults.headers.common.Authorization = `Bearer ${storedToken}`;
+    if (token) {
+      api.defaults.headers.common.Authorization = `Bearer ${token}`;
     }
-  }, []);
+  }, [token]);
 
   const value = useMemo<AuthContextValue>(
     () => ({
