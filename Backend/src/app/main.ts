@@ -1,6 +1,11 @@
 import { ValidationPipe } from '@nestjs/common';
 import { NestFactory } from '@nestjs/core';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
+import {
+  I18nService,
+  I18nValidationExceptionFilter,
+  I18nValidationPipe,
+} from 'nestjs-i18n';
 import { AppModule } from './app.module';
 
 async function bootstrap() {
@@ -12,16 +17,18 @@ async function bootstrap() {
   });
 
   app.useGlobalPipes(
-    new ValidationPipe({
+    new I18nValidationPipe({
       whitelist: true,
       transform: true,
       forbidNonWhitelisted: true,
     }),
   );
+  app.useGlobalFilters(new I18nValidationExceptionFilter());
 
+  const i18n = app.get<I18nService<Record<string, unknown>>>(I18nService);
   const swaggerConfig = new DocumentBuilder()
-    .setTitle('Big Chat Brasil API')
-    .setDescription('API do desafio fullstack BCB')
+    .setTitle(i18n.t('common.API_TITLE'))
+    .setDescription(i18n.t('common.API_DESCRIPTION'))
     .setVersion('1.0')
     .addBearerAuth()
     .build();

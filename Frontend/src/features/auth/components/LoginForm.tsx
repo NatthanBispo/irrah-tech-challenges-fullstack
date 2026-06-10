@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import type { DocumentType } from '../../../shared/types';
 import {
   formatDocument,
@@ -7,6 +8,7 @@ import {
 import { useLogin } from '../hooks/useLogin';
 
 export function LoginForm() {
+  const { t } = useTranslation();
   const [documentId, setDocumentId] = useState('');
   const [documentType, setDocumentType] = useState<DocumentType>('CPF');
   const { mutate, isPending, isError } = useLogin();
@@ -29,7 +31,7 @@ export function LoginForm() {
     >
       <div>
         <label className="mb-1 block text-sm font-medium text-slate-700">
-          CPF / CNPJ
+          {t('auth.documentLabel')}
         </label>
         <input
           type="text"
@@ -39,7 +41,9 @@ export function LoginForm() {
             setDocumentId(formatDocument(e.target.value, documentType))
           }
           placeholder={
-            documentType === 'CPF' ? '000.000.000-00' : '00.000.000/0000-00'
+            documentType === 'CPF'
+              ? t('auth.documentPlaceholderCpf')
+              : t('auth.documentPlaceholderCnpj')
           }
           maxLength={documentType === 'CPF' ? 14 : 18}
           required
@@ -49,7 +53,9 @@ export function LoginForm() {
       </div>
 
       <div>
-        <p className="mb-2 text-sm font-medium text-slate-700">Tipo</p>
+        <p className="mb-2 text-sm font-medium text-slate-700">
+          {t('auth.typeLabel')}
+        </p>
         <div className="flex gap-6">
           <label className="flex cursor-pointer items-center gap-2 text-sm text-slate-700">
             <input
@@ -59,7 +65,7 @@ export function LoginForm() {
               onChange={() => handleDocumentTypeChange('CPF')}
               disabled={isPending}
             />
-            PF (CPF)
+            {t('auth.cpf')}
           </label>
           <label className="flex cursor-pointer items-center gap-2 text-sm text-slate-700">
             <input
@@ -69,14 +75,14 @@ export function LoginForm() {
               onChange={() => handleDocumentTypeChange('CNPJ')}
               disabled={isPending}
             />
-            PJ (CNPJ)
+            {t('auth.cnpj')}
           </label>
         </div>
       </div>
 
       {isError && (
         <p className="rounded-lg bg-red-50 px-4 py-3 text-sm text-red-600">
-          Documento não encontrado ou cliente inativo.
+          {t('auth.loginError')}
         </p>
       )}
 
@@ -85,12 +91,14 @@ export function LoginForm() {
         disabled={isPending}
         className="w-full rounded-lg bg-blue-600 px-4 py-3 text-sm font-semibold text-white transition hover:bg-blue-700 disabled:opacity-60"
       >
-        {isPending ? 'Entrando...' : 'Entrar'}
+        {isPending ? t('auth.submitting') : t('auth.submit')}
       </button>
 
       <p className="text-center text-xs text-slate-400">
-        Testes: CPF <span className="font-mono">123.456.789-01</span> · CNPJ{' '}
-        <span className="font-mono">12.345.678/0001-99</span>
+        {t('auth.testHint', {
+          cpf: '123.456.789-01',
+          cnpj: '12.345.678/0001-99',
+        })}
       </p>
     </form>
   );

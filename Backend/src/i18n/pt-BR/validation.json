@@ -1,0 +1,5 @@
+{
+  "DOCUMENT_ID_REQUIRED": "O documento é obrigatório",
+  "DOCUMENT_ID_STRING": "O documento deve ser um texto",
+  "DOCUMENT_TYPE_ENUM": "O tipo de documento deve ser CPF ou CNPJ"
+}

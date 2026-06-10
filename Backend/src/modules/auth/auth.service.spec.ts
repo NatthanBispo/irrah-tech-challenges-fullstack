@@ -1,5 +1,6 @@
 import { NotFoundException } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
+import { I18nService } from 'nestjs-i18n';
 import { PrismaService } from '../../shared/database/prisma.service';
 import { DocumentType } from '../../shared/utils/enums';
 import { AuthService } from './auth.service';
@@ -11,6 +12,10 @@ describe('AuthService', () => {
     client: {
       findFirst: jest.fn(),
     },
+  };
+
+  const i18n = {
+    t: jest.fn((key: string) => key),
   };
 
   const prepaidClient = {
@@ -29,6 +34,7 @@ describe('AuthService', () => {
       providers: [
         AuthService,
         { provide: PrismaService, useValue: prisma },
+        { provide: I18nService, useValue: i18n },
       ],
     }).compile();
 
@@ -66,6 +72,8 @@ describe('AuthService', () => {
         documentType: DocumentType.CPF,
       }),
     ).rejects.toThrow(NotFoundException);
+
+    expect(i18n.t).toHaveBeenCalledWith('auth.CLIENT_NOT_FOUND');
   });
 
   it('lança NotFoundException quando cliente está inativo', async () => {
@@ -80,5 +88,7 @@ describe('AuthService', () => {
         documentType: DocumentType.CPF,
       }),
     ).rejects.toThrow(NotFoundException);
+
+    expect(i18n.t).toHaveBeenCalledWith('auth.CLIENT_INACTIVE');
   });
 });

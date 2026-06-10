@@ -1,11 +1,15 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
+import { I18nService } from 'nestjs-i18n';
 import { PrismaService } from '../../shared/database/prisma.service';
 import { ClientEntity } from '../../shared/utils/types';
 import { AuthRequestDto } from './dto/auth-request.dto';
 
 @Injectable()
 export class AuthService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly i18n: I18nService,
+  ) {}
 
   async authenticate(dto: AuthRequestDto) {
     const client = await this.prisma.client.findFirst({
@@ -16,11 +20,11 @@ export class AuthService {
     });
 
     if (!client) {
-      throw new NotFoundException('Cliente não encontrado');
+      throw new NotFoundException(this.i18n.t('auth.CLIENT_NOT_FOUND'));
     }
 
     if (!client.active) {
-      throw new NotFoundException('Cliente inativo');
+      throw new NotFoundException(this.i18n.t('auth.CLIENT_INACTIVE'));
     }
 
     return {

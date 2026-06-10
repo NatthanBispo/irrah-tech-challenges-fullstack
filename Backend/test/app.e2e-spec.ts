@@ -1,5 +1,9 @@
-import { INestApplication, ValidationPipe } from '@nestjs/common';
+import { INestApplication } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
+import {
+  I18nValidationExceptionFilter,
+  I18nValidationPipe,
+} from 'nestjs-i18n';
 import request from 'supertest';
 import { App } from 'supertest/types';
 import { AppModule } from './../src/app/app.module';
@@ -14,12 +18,13 @@ describe('BCB API (e2e)', () => {
 
     app = moduleFixture.createNestApplication();
     app.useGlobalPipes(
-      new ValidationPipe({
+      new I18nValidationPipe({
         whitelist: true,
         transform: true,
         forbidNonWhitelisted: true,
       }),
     );
+    app.useGlobalFilters(new I18nValidationExceptionFilter());
     await app.init();
   });
 
@@ -40,7 +45,10 @@ describe('BCB API (e2e)', () => {
     return request(app.getHttpServer())
       .post('/auth')
       .send({ documentId: '00000000000', documentType: 'CPF' })
-      .expect(404);
+      .expect(404)
+      .expect((response) => {
+        expect(response.body.message).toBe('Cliente não encontrado');
+      });
   });
 
   afterEach(async () => {

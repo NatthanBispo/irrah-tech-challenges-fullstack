@@ -1,0 +1,6 @@
+{
+  "API_TITLE": "Big Chat Brasil API",
+  "API_DESCRIPTION": "API do desafio fullstack BCB",
+  "AUTH_TAG": "Autenticação",
+  "AUTH_OPERATION": "Autentica cliente por CPF/CNPJ"
+}
