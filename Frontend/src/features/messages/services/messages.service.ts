@@ -1,10 +1,10 @@
-import type { SendMessageRequest, SendMessageResponse } from '../types';
-import { api } from './client';
+import type { SendMessageRequest, SendMessageResponse } from '../../../shared/types';
+import { api } from '../../../shared/services/api';
 
 export async function sendMessage(
   payload: SendMessageRequest,
 ): Promise<SendMessageResponse> {
-  // TODO: integrar com POST /messages
+  // TODO: implementar envio de mensagem
   const { data } = await api.post<SendMessageResponse>('/messages', payload);
   return data;
 }

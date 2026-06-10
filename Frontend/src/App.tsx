@@ -1,17 +1,21 @@
-import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom';
-import { ChatPage } from './pages/ChatPage';
-import { ConversationsPage } from './pages/ConversationsPage';
-import { LoginPage } from './pages/LoginPage';
+import { BrowserRouter, Route, Routes } from 'react-router-dom';
+import { LoginPage } from './app/(auth)/page';
+import { HomePage } from './app/page';
+import { ConversationsPage } from './app/dashboard/page';
+import { ChatPage } from './app/dashboard/[conversationId]/page';
+import { RootLayout } from './app/layout';
 
 export default function App() {
   return (
     <BrowserRouter>
-      <Routes>
-        <Route path="/login" element={<LoginPage />} />
-        <Route path="/conversations" element={<ConversationsPage />} />
-        <Route path="/conversations/:conversationId" element={<ChatPage />} />
-        <Route path="*" element={<Navigate to="/login" replace />} />
-      </Routes>
+      <RootLayout>
+        <Routes>
+          <Route path="/" element={<HomePage />} />
+          <Route path="/login" element={<LoginPage />} />
+          <Route path="/dashboard" element={<ConversationsPage />} />
+          <Route path="/dashboard/:conversationId" element={<ChatPage />} />
+        </Routes>
+      </RootLayout>
     </BrowserRouter>
   );
 }
