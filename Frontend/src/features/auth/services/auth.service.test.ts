@@ -19,7 +19,7 @@ describe('auth.service', () => {
       client: {
         id: 'client-id',
         name: 'Cliente Teste',
-        documentId: '12345678901',
+        documentId: '39053344705',
         documentType: 'CPF' as const,
         planType: 'prepaid' as const,
         active: true,
@@ -29,12 +29,12 @@ describe('auth.service', () => {
     vi.mocked(api.post).mockResolvedValue({ data: response });
 
     const result = await login({
-      documentId: '12345678901',
+      documentId: '39053344705',
       documentType: 'CPF',
     });
 
     expect(api.post).toHaveBeenCalledWith('/auth', {
-      documentId: '12345678901',
+      documentId: '39053344705',
       documentType: 'CPF',
     });
     expect(result).toEqual(response);
@@ -46,7 +46,7 @@ describe('auth.service', () => {
       client: {
         id: 'client-id',
         name: 'Empresa Teste',
-        documentId: '12345678901',
+        documentId: '39053344705',
         documentType: 'CPF' as const,
         planType: 'prepaid' as const,
         balance: 0,
@@ -58,14 +58,14 @@ describe('auth.service', () => {
 
     const result = await register({
       name: 'Empresa Teste',
-      documentId: '12345678901',
+      documentId: '39053344705',
       documentType: 'CPF',
       planType: 'prepaid',
     });
 
     expect(api.post).toHaveBeenCalledWith('/auth/register', {
       name: 'Empresa Teste',
-      documentId: '12345678901',
+      documentId: '39053344705',
       documentType: 'CPF',
       planType: 'prepaid',
     });

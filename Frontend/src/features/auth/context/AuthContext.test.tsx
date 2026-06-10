@@ -19,7 +19,7 @@ vi.mock('../../../shared/services/api', () => ({
 const mockClient: Client = {
   id: 'client-id',
   name: 'Cliente Teste',
-  documentId: '12345678901',
+  documentId: '39053344705',
   documentType: 'CPF',
   planType: 'prepaid',
   active: true,

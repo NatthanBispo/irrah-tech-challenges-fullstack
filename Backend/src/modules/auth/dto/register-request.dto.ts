@@ -1,6 +1,7 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { IsEnum, IsNotEmpty, IsString } from 'class-validator';
 import { i18nValidationMessage } from 'nestjs-i18n';
+import { IsValidDocument } from '../../../shared/validators/is-valid-document.validator';
 import { DocumentType, PlanType } from '../../../shared/utils/enums';
 
 export class RegisterRequestDto {
@@ -9,9 +10,10 @@ export class RegisterRequestDto {
   @IsNotEmpty({ message: i18nValidationMessage('validation.NAME_REQUIRED') })
   name: string;
 
-  @ApiProperty({ example: '12345678901' })
+  @ApiProperty({ example: '39053344705' })
   @IsString({ message: i18nValidationMessage('validation.DOCUMENT_ID_STRING') })
   @IsNotEmpty({ message: i18nValidationMessage('validation.DOCUMENT_ID_REQUIRED') })
+  @IsValidDocument()
   documentId: string;
 
   @ApiProperty({ enum: DocumentType, example: DocumentType.CPF })

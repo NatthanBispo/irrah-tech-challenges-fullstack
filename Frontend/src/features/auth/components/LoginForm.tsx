@@ -6,6 +6,7 @@ import {
   formatDocumentAuto,
   stripDocument,
 } from '../../../shared/utils/document-mask';
+import { isValidDocumentAuto } from '../../../shared/utils/document-validation';
 import { useLogin } from '../hooks/useLogin';
 
 export function LoginForm() {
@@ -26,7 +27,16 @@ export function LoginForm() {
         const documentType = detectDocumentType(stripped);
 
         if (!documentType) {
-          setValidationError(t('auth.invalidDocument'));
+          setValidationError(t('auth.invalidDocumentLength'));
+          return;
+        }
+
+        if (!isValidDocumentAuto(stripped)) {
+          setValidationError(
+            documentType === 'CNPJ'
+              ? t('auth.invalidCnpj')
+              : t('auth.invalidCpf'),
+          );
           return;
         }
 

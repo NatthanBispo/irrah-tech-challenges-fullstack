@@ -6,6 +6,7 @@ import {
   formatDocument,
   stripDocument,
 } from '../../../shared/utils/document-mask';
+import { isValidDocument } from '../../../shared/utils/document-validation';
 import { useRegister } from '../hooks/useRegister';
 
 export function RegisterForm() {
@@ -14,6 +15,7 @@ export function RegisterForm() {
   const [documentId, setDocumentId] = useState('');
   const [documentType, setDocumentType] = useState<DocumentType>('CPF');
   const [planType, setPlanType] = useState<PlanType>('prepaid');
+  const [validationError, setValidationError] = useState<string | null>(null);
   const { mutate, isPending, isError, error } = useRegister();
 
   function handleDocumentTypeChange(type: DocumentType) {
@@ -33,9 +35,21 @@ export function RegisterForm() {
       className="space-y-5"
       onSubmit={(event) => {
         event.preventDefault();
+        const stripped = stripDocument(documentId);
+
+        if (!isValidDocument(stripped, documentType)) {
+          setValidationError(
+            documentType === 'CNPJ'
+              ? t('auth.invalidCnpj')
+              : t('auth.invalidCpf'),
+          );
+          return;
+        }
+
+        setValidationError(null);
         mutate({
           name,
-          documentId: stripDocument(documentId),
+          documentId: stripped,
           documentType,
           planType,
         });
@@ -64,9 +78,10 @@ export function RegisterForm() {
           type="text"
           inputMode="numeric"
           value={documentId}
-          onChange={(e) =>
-            setDocumentId(formatDocument(e.target.value, documentType))
-          }
+          onChange={(e) => {
+            setDocumentId(formatDocument(e.target.value, documentType));
+            setValidationError(null);
+          }}
           placeholder={
             documentType === 'CPF'
               ? t('auth.documentPlaceholderCpf')
@@ -150,6 +165,12 @@ export function RegisterForm() {
           </label>
         </div>
       </div>
+
+      {validationError && (
+        <p className="rounded-lg bg-red-50 px-4 py-3 text-sm text-red-600">
+          {validationError}
+        </p>
+      )}
 
       {isError && (
         <p className="rounded-lg bg-red-50 px-4 py-3 text-sm text-red-600">

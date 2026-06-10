@@ -8,7 +8,7 @@ import { renderWithProviders } from '../../test/test-utils';
 const mockClient = {
   id: 'client-id',
   name: 'Cliente Teste',
-  documentId: '12345678901',
+  documentId: '39053344705',
   documentType: 'CPF' as const,
   planType: 'prepaid' as const,
   active: true,

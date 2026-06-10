@@ -37,7 +37,7 @@ describe('BCB API (e2e)', () => {
       .post('/auth/register')
       .send({
         name: 'Empresa ABC',
-        documentId: '12345678901',
+        documentId: '39053344705',
         documentType: 'CPF',
         planType: 'prepaid',
       })
@@ -45,7 +45,7 @@ describe('BCB API (e2e)', () => {
       .expect((response) => {
         expect(response.body.token).toBeDefined();
         expect(response.body.client.name).toBe('Empresa ABC');
-        expect(response.body.client.documentId).toBe('12345678901');
+        expect(response.body.client.documentId).toBe('39053344705');
         expect(response.body.client.planType).toBe('prepaid');
         expect(response.body.client.balance).toBe(0);
       });
@@ -56,7 +56,7 @@ describe('BCB API (e2e)', () => {
       .post('/auth/register')
       .send({
         name: 'Tech Solutions',
-        documentId: '12345678000199',
+        documentId: '11222333000181',
         documentType: 'CNPJ',
         planType: 'postpaid',
       })
@@ -93,7 +93,7 @@ describe('BCB API (e2e)', () => {
       .post('/auth/register')
       .send({
         name: 'Primeiro Cliente',
-        documentId: '11111111111',
+        documentId: '11144477735',
         documentType: 'CPF',
         planType: 'prepaid',
       })
@@ -103,7 +103,7 @@ describe('BCB API (e2e)', () => {
       .post('/auth/register')
       .send({
         name: 'Segundo Cliente',
-        documentId: '11111111111',
+        documentId: '11144477735',
         documentType: 'CPF',
         planType: 'postpaid',
       })
@@ -116,10 +116,22 @@ describe('BCB API (e2e)', () => {
   it('POST /auth retorna 404 para cliente inexistente', () => {
     return request(app.getHttpServer())
       .post('/auth')
-      .send({ documentId: '00000000000', documentType: 'CPF' })
+      .send({ documentId: '52998224725', documentType: 'CPF' })
       .expect(404)
       .expect((response) => {
         expect(response.body.message).toBe('Cliente não encontrado');
+      });
+  });
+
+  it('POST /auth retorna 400 para CPF inválido', () => {
+    return request(app.getHttpServer())
+      .post('/auth')
+      .send({ documentId: '12345678901', documentType: 'CPF' })
+      .expect(400)
+      .expect((response) => {
+        expect(response.body.message[0].constraints.isValidDocument).toBe(
+          'Informe um CPF válido',
+        );
       });
   });
 

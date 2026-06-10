@@ -4,5 +4,7 @@
   "DOCUMENT_TYPE_ENUM": "O tipo de documento deve ser CPF ou CNPJ",
   "NAME_REQUIRED": "O nome é obrigatório",
   "NAME_STRING": "O nome deve ser um texto",
-  "PLAN_TYPE_ENUM": "O plano deve ser pré-pago ou pós-pago"
+  "PLAN_TYPE_ENUM": "O plano deve ser pré-pago ou pós-pago",
+  "CPF_INVALID": "Informe um CPF válido",
+  "CNPJ_INVALID": "Informe um CNPJ válido"
 }

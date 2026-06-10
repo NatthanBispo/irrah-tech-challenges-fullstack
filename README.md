@@ -85,7 +85,7 @@ Endpoint: `POST /auth/register`
 ```json
 {
   "name": "Empresa ABC",
-  "documentId": "12345678901",
+  "documentId": "39053344705",
   "documentType": "CPF",
   "planType": "prepaid"
 }

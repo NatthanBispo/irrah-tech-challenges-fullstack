@@ -1,12 +1,14 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { IsEnum, IsNotEmpty, IsString } from 'class-validator';
 import { i18nValidationMessage } from 'nestjs-i18n';
+import { IsValidDocument } from '../../../shared/validators/is-valid-document.validator';
 import { DocumentType } from '../../../shared/utils/enums';
 
 export class AuthRequestDto {
-  @ApiProperty({ example: '12345678901' })
+  @ApiProperty({ example: '39053344705' })
   @IsString({ message: i18nValidationMessage('validation.DOCUMENT_ID_STRING') })
   @IsNotEmpty({ message: i18nValidationMessage('validation.DOCUMENT_ID_REQUIRED') })
+  @IsValidDocument()
   documentId: string;
 
   @ApiProperty({ enum: DocumentType, example: DocumentType.CPF })

@@ -19,9 +19,9 @@ npm run test:e2e   # aplica migrations + seed automaticamente (requer Postgres r
 |--------|------|--------|
 | auth | `POST /auth` | Implementado |
 
-## Dados de teste (seed)
+## Exemplos de documentos válidos
 
-| Documento | Tipo | Plano |
-|-----------|------|-------|
-| `12345678901` | CPF | Pré-pago |
-| `12345678000199` | CNPJ | Pós-pago |
+| Documento | Tipo |
+|-----------|------|
+| `39053344705` | CPF |
+| `11222333000181` | CNPJ |

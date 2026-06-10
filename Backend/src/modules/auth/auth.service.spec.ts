@@ -23,7 +23,7 @@ describe('AuthService', () => {
   const prepaidClient = {
     id: 'client-1',
     name: 'Empresa ABC',
-    documentId: '12345678901',
+    documentId: '39053344705',
     documentType: DocumentType.CPF,
     planType: PlanType.prepaid,
     balance: 50,
@@ -48,7 +48,7 @@ describe('AuthService', () => {
     prisma.client.findFirst.mockResolvedValue(prepaidClient);
 
     const result = await service.authenticate({
-      documentId: '12345678901',
+      documentId: '39053344705',
       documentType: DocumentType.CPF,
     });
 
@@ -56,7 +56,7 @@ describe('AuthService', () => {
     expect(result.client).toEqual({
       id: 'client-1',
       name: 'Empresa ABC',
-      documentId: '12345678901',
+      documentId: '39053344705',
       documentType: DocumentType.CPF,
       balance: 50,
       limit: undefined,
@@ -70,7 +70,7 @@ describe('AuthService', () => {
 
     await expect(
       service.authenticate({
-        documentId: '00000000000',
+        documentId: '52998224725',
         documentType: DocumentType.CPF,
       }),
     ).rejects.toThrow(NotFoundException);
@@ -86,7 +86,7 @@ describe('AuthService', () => {
 
     await expect(
       service.authenticate({
-        documentId: '12345678901',
+        documentId: '39053344705',
         documentType: DocumentType.CPF,
       }),
     ).rejects.toThrow(NotFoundException);
@@ -103,7 +103,7 @@ describe('AuthService', () => {
 
     const result = await service.register({
       name: 'Empresa ABC',
-      documentId: '12345678901',
+      documentId: '39053344705',
       documentType: DocumentType.CPF,
       planType: PlanType.prepaid,
     });
@@ -111,7 +111,7 @@ describe('AuthService', () => {
     expect(prisma.client.create).toHaveBeenCalledWith({
       data: {
         name: 'Empresa ABC',
-        documentId: '12345678901',
+        documentId: '39053344705',
         documentType: DocumentType.CPF,
         planType: PlanType.prepaid,
         balance: 0,
@@ -130,7 +130,7 @@ describe('AuthService', () => {
     prisma.client.create.mockResolvedValue({
       id: 'client-2',
       name: 'Tech Solutions',
-      documentId: '12345678000199',
+      documentId: '11222333000181',
       documentType: DocumentType.CNPJ,
       planType: PlanType.postpaid,
       balance: 0,
@@ -140,7 +140,7 @@ describe('AuthService', () => {
 
     const result = await service.register({
       name: 'Tech Solutions',
-      documentId: '12345678000199',
+      documentId: '11222333000181',
       documentType: DocumentType.CNPJ,
       planType: PlanType.postpaid,
     });
@@ -162,7 +162,7 @@ describe('AuthService', () => {
     await expect(
       service.register({
         name: 'Outro Cliente',
-        documentId: '12345678901',
+        documentId: '39053344705',
         documentType: DocumentType.CPF,
         planType: PlanType.prepaid,
       }),

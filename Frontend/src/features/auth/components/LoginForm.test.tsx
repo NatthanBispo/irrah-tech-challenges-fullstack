@@ -9,10 +9,13 @@ import * as authService from '../services/auth.service';
 
 vi.mock('../services/auth.service');
 
+const VALID_CPF = '39053344705';
+const VALID_CNPJ = '11222333000181';
+
 const mockClient = {
   id: 'client-id',
   name: 'Cliente Teste',
-  documentId: '12345678901',
+  documentId: VALID_CPF,
   documentType: 'CPF' as const,
   planType: 'prepaid' as const,
   active: true,
@@ -43,9 +46,9 @@ describe('LoginForm', () => {
     });
 
     const input = screen.getByPlaceholderText('000.000.000-00');
-    await user.type(input, '12345678901');
+    await user.type(input, VALID_CPF);
 
-    expect(input).toHaveValue('123.456.789-01');
+    expect(input).toHaveValue('390.533.447-05');
   });
 
   it('aplica máscara de CNPJ automaticamente ao digitar 14 dígitos', async () => {
@@ -56,9 +59,9 @@ describe('LoginForm', () => {
     });
 
     const input = screen.getByPlaceholderText('000.000.000-00');
-    await user.type(input, '12345678000199');
+    await user.type(input, VALID_CNPJ);
 
-    expect(input).toHaveValue('12.345.678/0001-99');
+    expect(input).toHaveValue('11.222.333/0001-81');
   });
 
   it('autentica CPF com sucesso e redireciona', async () => {
@@ -73,7 +76,7 @@ describe('LoginForm', () => {
       routerProps: { initialEntries: ['/'] },
     });
 
-    await user.type(screen.getByPlaceholderText('000.000.000-00'), '12345678901');
+    await user.type(screen.getByPlaceholderText('000.000.000-00'), VALID_CPF);
     await user.click(screen.getByRole('button', { name: 'Entrar' }));
 
     await waitFor(() => {
@@ -81,7 +84,7 @@ describe('LoginForm', () => {
     });
 
     expect(authService.login).toHaveBeenCalledWith({
-      documentId: '12345678901',
+      documentId: VALID_CPF,
       documentType: 'CPF',
     });
     expect(localStorage.getItem(TOKEN_KEY)).toBe('client-id');
@@ -94,7 +97,7 @@ describe('LoginForm', () => {
       client: {
         ...mockClient,
         id: 'client-id-2',
-        documentId: '12345678000199',
+        documentId: VALID_CNPJ,
         documentType: 'CNPJ',
       },
     });
@@ -105,12 +108,12 @@ describe('LoginForm', () => {
       routerProps: { initialEntries: ['/'] },
     });
 
-    await user.type(screen.getByPlaceholderText('000.000.000-00'), '12345678000199');
+    await user.type(screen.getByPlaceholderText('000.000.000-00'), VALID_CNPJ);
     await user.click(screen.getByRole('button', { name: 'Entrar' }));
 
     await waitFor(() => {
       expect(authService.login).toHaveBeenCalledWith({
-        documentId: '12345678000199',
+        documentId: VALID_CNPJ,
         documentType: 'CNPJ',
       });
     });
@@ -128,8 +131,24 @@ describe('LoginForm', () => {
 
     expect(
       await screen.findByText(
-        'Informe um CPF (11 dígitos) ou CNPJ (14 dígitos) válido.',
+        'Informe um CPF (11 dígitos) ou CNPJ (14 dígitos).',
       ),
+    ).toBeInTheDocument();
+    expect(authService.login).not.toHaveBeenCalled();
+  });
+
+  it('exibe erro para CPF com dígitos verificadores inválidos', async () => {
+    const user = userEvent.setup();
+
+    renderWithProviders(<LoginForm />, {
+      routerProps: { initialEntries: ['/'] },
+    });
+
+    await user.type(screen.getByPlaceholderText('000.000.000-00'), '12345678901');
+    await user.click(screen.getByRole('button', { name: 'Entrar' }));
+
+    expect(
+      await screen.findByText('Informe um CPF válido.'),
     ).toBeInTheDocument();
     expect(authService.login).not.toHaveBeenCalled();
   });
@@ -143,7 +162,7 @@ describe('LoginForm', () => {
       routerProps: { initialEntries: ['/'] },
     });
 
-    await user.type(screen.getByPlaceholderText('000.000.000-00'), '00000000000');
+    await user.type(screen.getByPlaceholderText('000.000.000-00'), '52998224725');
     await user.click(screen.getByRole('button', { name: 'Entrar' }));
 
     expect(

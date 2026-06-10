@@ -9,10 +9,13 @@ import * as authService from '../services/auth.service';
 
 vi.mock('../services/auth.service');
 
+const VALID_CPF = '39053344705';
+const VALID_CNPJ = '11222333000181';
+
 const mockPrepaidClient = {
   id: 'client-id',
   name: 'Empresa Teste',
-  documentId: '12345678901',
+  documentId: VALID_CPF,
   documentType: 'CPF' as const,
   planType: 'prepaid' as const,
   balance: 0,
@@ -22,7 +25,7 @@ const mockPrepaidClient = {
 const mockPostpaidClient = {
   id: 'client-id-2',
   name: 'Tech Solutions',
-  documentId: '12345678000199',
+  documentId: VALID_CNPJ,
   documentType: 'CNPJ' as const,
   planType: 'postpaid' as const,
   limit: 100,
@@ -55,9 +58,9 @@ describe('RegisterForm', () => {
 
     await user.type(screen.getByPlaceholderText('Nome da empresa ou pessoa'), 'Empresa');
     const input = screen.getByPlaceholderText('000.000.000-00');
-    await user.type(input, '12345678901');
+    await user.type(input, VALID_CPF);
 
-    expect(input).toHaveValue('123.456.789-01');
+    expect(input).toHaveValue('390.533.447-05');
   });
 
   it('cadastra cliente pré-pago com sucesso e redireciona', async () => {
@@ -76,7 +79,7 @@ describe('RegisterForm', () => {
       screen.getByPlaceholderText('Nome da empresa ou pessoa'),
       'Empresa Teste',
     );
-    await user.type(screen.getByPlaceholderText('000.000.000-00'), '12345678901');
+    await user.type(screen.getByPlaceholderText('000.000.000-00'), VALID_CPF);
     await user.click(screen.getByRole('button', { name: 'Cadastrar' }));
 
     await waitFor(() => {
@@ -85,7 +88,7 @@ describe('RegisterForm', () => {
 
     expect(authService.register).toHaveBeenCalledWith({
       name: 'Empresa Teste',
-      documentId: '12345678901',
+      documentId: VALID_CPF,
       documentType: 'CPF',
       planType: 'prepaid',
     });
@@ -111,7 +114,7 @@ describe('RegisterForm', () => {
     await user.click(screen.getByRole('radio', { name: /PJ \(CNPJ\)/ }));
     await user.type(
       screen.getByPlaceholderText('00.000.000/0000-00'),
-      '12345678000199',
+      VALID_CNPJ,
     );
     await user.click(screen.getByRole('radio', { name: /Pós-pago/ }));
     await user.click(screen.getByRole('button', { name: 'Cadastrar' }));
@@ -119,11 +122,31 @@ describe('RegisterForm', () => {
     await waitFor(() => {
       expect(authService.register).toHaveBeenCalledWith({
         name: 'Tech Solutions',
-        documentId: '12345678000199',
+        documentId: VALID_CNPJ,
         documentType: 'CNPJ',
         planType: 'postpaid',
       });
     });
+  });
+
+  it('exibe erro para CPF inválido antes de enviar', async () => {
+    const user = userEvent.setup();
+
+    renderWithProviders(<RegisterForm />, {
+      routerProps: { initialEntries: ['/'] },
+    });
+
+    await user.type(
+      screen.getByPlaceholderText('Nome da empresa ou pessoa'),
+      'Empresa Teste',
+    );
+    await user.type(screen.getByPlaceholderText('000.000.000-00'), '12345678901');
+    await user.click(screen.getByRole('button', { name: 'Cadastrar' }));
+
+    expect(
+      await screen.findByText('Informe um CPF válido.'),
+    ).toBeInTheDocument();
+    expect(authService.register).not.toHaveBeenCalled();
   });
 
   it('exibe erro quando documento já está cadastrado', async () => {
@@ -141,7 +164,7 @@ describe('RegisterForm', () => {
       screen.getByPlaceholderText('Nome da empresa ou pessoa'),
       'Empresa Teste',
     );
-    await user.type(screen.getByPlaceholderText('000.000.000-00'), '12345678901');
+    await user.type(screen.getByPlaceholderText('000.000.000-00'), VALID_CPF);
     await user.click(screen.getByRole('button', { name: 'Cadastrar' }));
 
     expect(
