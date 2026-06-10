@@ -1,0 +1,34 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum DocumentType {
+  CPF
+  CNPJ
+}
+
+enum PlanType {
+  prepaid
+  postpaid
+}
+
+model Client {
+  id           String       @id @default(uuid())
+  name         String
+  documentId   String       @unique
+  documentType DocumentType
+  planType     PlanType
+  balance      Decimal      @default(0) @db.Decimal(10, 2)
+  limit        Decimal      @default(0) @db.Decimal(10, 2)
+  monthlyUsage Decimal      @default(0) @db.Decimal(10, 2)
+  active       Boolean      @default(true)
+  createdAt    DateTime     @default(now())
+  updatedAt    DateTime     @updatedAt
+
+  @@map("clients")
+}
