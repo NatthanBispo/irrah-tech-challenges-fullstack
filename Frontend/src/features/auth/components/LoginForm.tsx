@@ -1,8 +1,9 @@
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import type { DocumentType } from '../../../shared/types';
+import { Link } from 'react-router-dom';
 import {
-  formatDocument,
+  detectDocumentType,
+  formatDocumentAuto,
   stripDocument,
 } from '../../../shared/utils/document-mask';
 import { useLogin } from '../hooks/useLogin';
@@ -10,23 +11,27 @@ import { useLogin } from '../hooks/useLogin';
 export function LoginForm() {
   const { t } = useTranslation();
   const [documentId, setDocumentId] = useState('');
-  const [documentType, setDocumentType] = useState<DocumentType>('CPF');
+  const [validationError, setValidationError] = useState<string | null>(null);
   const { mutate, isPending, isError } = useLogin();
 
-  function handleDocumentTypeChange(type: DocumentType) {
-    setDocumentType(type);
-    setDocumentId((current) => formatDocument(current, type));
-  }
+  const digits = stripDocument(documentId);
+  const isCnpj = digits.length > 11;
 
   return (
     <form
       className="space-y-5"
       onSubmit={(event) => {
         event.preventDefault();
-        mutate({
-          documentId: stripDocument(documentId),
-          documentType,
-        });
+        const stripped = stripDocument(documentId);
+        const documentType = detectDocumentType(stripped);
+
+        if (!documentType) {
+          setValidationError(t('auth.invalidDocument'));
+          return;
+        }
+
+        setValidationError(null);
+        mutate({ documentId: stripped, documentType });
       }}
     >
       <div>
@@ -37,48 +42,27 @@ export function LoginForm() {
           type="text"
           inputMode="numeric"
           value={documentId}
-          onChange={(e) =>
-            setDocumentId(formatDocument(e.target.value, documentType))
-          }
+          onChange={(e) => {
+            setDocumentId(formatDocumentAuto(e.target.value));
+            setValidationError(null);
+          }}
           placeholder={
-            documentType === 'CPF'
-              ? t('auth.documentPlaceholderCpf')
-              : t('auth.documentPlaceholderCnpj')
+            isCnpj
+              ? t('auth.documentPlaceholderCnpj')
+              : t('auth.documentPlaceholderCpf')
           }
-          maxLength={documentType === 'CPF' ? 14 : 18}
+          maxLength={18}
           required
           disabled={isPending}
           className="w-full rounded-lg border border-slate-300 px-4 py-3 text-sm outline-none transition focus:border-blue-500 focus:ring-1 focus:ring-blue-500 disabled:opacity-60"
         />
       </div>
 
-      <div>
-        <p className="mb-2 text-sm font-medium text-slate-700">
-          {t('auth.typeLabel')}
+      {validationError && (
+        <p className="rounded-lg bg-red-50 px-4 py-3 text-sm text-red-600">
+          {validationError}
         </p>
-        <div className="flex gap-6">
-          <label className="flex cursor-pointer items-center gap-2 text-sm text-slate-700">
-            <input
-              type="radio"
-              name="documentType"
-              checked={documentType === 'CPF'}
-              onChange={() => handleDocumentTypeChange('CPF')}
-              disabled={isPending}
-            />
-            {t('auth.cpf')}
-          </label>
-          <label className="flex cursor-pointer items-center gap-2 text-sm text-slate-700">
-            <input
-              type="radio"
-              name="documentType"
-              checked={documentType === 'CNPJ'}
-              onChange={() => handleDocumentTypeChange('CNPJ')}
-              disabled={isPending}
-            />
-            {t('auth.cnpj')}
-          </label>
-        </div>
-      </div>
+      )}
 
       {isError && (
         <p className="rounded-lg bg-red-50 px-4 py-3 text-sm text-red-600">
@@ -94,11 +78,14 @@ export function LoginForm() {
         {isPending ? t('auth.submitting') : t('auth.submit')}
       </button>
 
-      <p className="text-center text-xs text-slate-400">
-        {t('auth.testHint', {
-          cpf: '123.456.789-01',
-          cnpj: '12.345.678/0001-99',
-        })}
+      <p className="text-center text-sm text-slate-500">
+        {t('auth.noAccount')}{' '}
+        <Link
+          to="/register"
+          className="font-medium text-blue-600 hover:underline"
+        >
+          {t('auth.registerLink')}
+        </Link>
       </p>
     </form>
   );

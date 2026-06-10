@@ -1,5 +1,6 @@
 import { BrowserRouter, Route, Routes } from 'react-router-dom';
 import { LoginPage } from './app/(auth)/page';
+import { RegisterPage } from './app/(auth)/register/page';
 import { RootLayout } from './app/layout';
 import { HomePage } from './app/page';
 import { ChatPage } from './app/dashboard/[conversationId]/page';
@@ -18,6 +19,14 @@ export default function App() {
             element={
               <GuestRoute>
                 <LoginPage />
+              </GuestRoute>
+            }
+          />
+          <Route
+            path="/register"
+            element={
+              <GuestRoute>
+                <RegisterPage />
               </GuestRoute>
             }
           />

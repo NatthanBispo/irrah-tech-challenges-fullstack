@@ -1,5 +1,8 @@
 {
   "DOCUMENT_ID_REQUIRED": "O documento é obrigatório",
   "DOCUMENT_ID_STRING": "O documento deve ser um texto",
-  "DOCUMENT_TYPE_ENUM": "O tipo de documento deve ser CPF ou CNPJ"
+  "DOCUMENT_TYPE_ENUM": "O tipo de documento deve ser CPF ou CNPJ",
+  "NAME_REQUIRED": "O nome é obrigatório",
+  "NAME_STRING": "O nome deve ser um texto",
+  "PLAN_TYPE_ENUM": "O plano deve ser pré-pago ou pós-pago"
 }

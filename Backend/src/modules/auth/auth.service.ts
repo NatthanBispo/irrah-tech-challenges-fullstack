@@ -1,8 +1,16 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import {
+  ConflictException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { I18nService } from 'nestjs-i18n';
 import { PrismaService } from '../../shared/database/prisma.service';
+import { PlanType } from '../../shared/utils/enums';
 import { ClientEntity } from '../../shared/utils/types';
 import { AuthRequestDto } from './dto/auth-request.dto';
+import { RegisterRequestDto } from './dto/register-request.dto';
+
+const DEFAULT_POSTPAID_LIMIT = 100;
 
 @Injectable()
 export class AuthService {
@@ -27,6 +35,37 @@ export class AuthService {
       throw new NotFoundException(this.i18n.t('auth.CLIENT_INACTIVE'));
     }
 
+    return this.buildAuthResponse(client);
+  }
+
+  async register(dto: RegisterRequestDto) {
+    const existingClient = await this.prisma.client.findUnique({
+      where: { documentId: dto.documentId },
+    });
+
+    if (existingClient) {
+      throw new ConflictException(
+        this.i18n.t('auth.DOCUMENT_ALREADY_EXISTS'),
+      );
+    }
+
+    const client = await this.prisma.client.create({
+      data: {
+        name: dto.name,
+        documentId: dto.documentId,
+        documentType: dto.documentType,
+        planType: dto.planType,
+        balance: 0,
+        limit: dto.planType === PlanType.postpaid ? DEFAULT_POSTPAID_LIMIT : 0,
+        monthlyUsage: 0,
+        active: true,
+      },
+    });
+
+    return this.buildAuthResponse(client);
+  }
+
+  private buildAuthResponse(client: ClientEntity) {
     return {
       token: client.id,
       client: this.mapClient(client),

@@ -15,13 +15,13 @@ Solução do desafio técnico BCB.
 ├── Backend/
 │   ├── prisma/schema.prisma
 │   └── src/
-│       ├── auth/              # Autenticação (implementado)
-│       └── prisma/
+│       ├── modules/auth/      # Autenticação e cadastro
+│       └── shared/
 ├── Frontend/
 │   └── src/
-│       ├── api/
-│       ├── pages/
-│       └── types/
+│       ├── features/auth/
+│       ├── app/
+│       └── shared/
 └── docker-compose.yml
 ```
 
@@ -67,18 +67,33 @@ npm run dev
 
 **Backend:**
 - [x] Autenticação por CPF/CNPJ (`POST /auth`)
+- [x] Cadastro de cliente com escolha de plano (`POST /auth/register`)
 - [ ] Conversas e mensagens
 - [ ] Fila de mensagens
 - [ ] Validação financeira
 
 **Frontend:**
-- [ ] Tela de login
+- [x] Tela de login
+- [x] Tela de cadastro com escolha de plano
 - [ ] Lista de conversas
 - [ ] Interface de chat
 
-## Dados de teste (seed)
+## Cadastro de cliente
 
-| Documento | Tipo | Plano |
-|-----------|------|-------|
-| `12345678901` | CPF | Pré-pago (R$ 50,00) |
-| `12345678000199` | CNPJ | Pós-pago (limite R$ 100,00) |
+Endpoint: `POST /auth/register`
+
+```json
+{
+  "name": "Empresa ABC",
+  "documentId": "12345678901",
+  "documentType": "CPF",
+  "planType": "prepaid"
+}
+```
+
+| Plano | Valor inicial |
+|-------|---------------|
+| Pré-pago (`prepaid`) | Saldo R$ 0,00 |
+| Pós-pago (`postpaid`) | Limite mensal R$ 100,00 |
+
+Após o cadastro, a API retorna `{ token, client }` e o frontend redireciona automaticamente para o dashboard.

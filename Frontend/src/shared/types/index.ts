@@ -26,6 +26,13 @@ export interface AuthResponse {
   client: Client;
 }
 
+export interface RegisterPayload {
+  name: string;
+  documentId: string;
+  documentType: DocumentType;
+  planType: PlanType;
+}
+
 export interface Conversation {
   id: string;
   recipientId: string;

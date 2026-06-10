@@ -11,9 +11,28 @@
     "cpf": "PF (CPF)",
     "cnpj": "PJ (CNPJ)",
     "loginError": "Documento não encontrado ou cliente inativo.",
+    "invalidDocument": "Informe um CPF (11 dígitos) ou CNPJ (14 dígitos) válido.",
     "submitting": "Entrando...",
     "submit": "Entrar",
-    "testHint": "Testes: CPF {{cpf}} · CNPJ {{cnpj}}"
+    "noAccount": "Não tem conta?",
+    "registerLink": "Criar conta"
+  },
+  "register": {
+    "title": "Criar conta",
+    "subtitle": "Cadastre-se para começar a usar o BCB",
+    "nameLabel": "Nome",
+    "namePlaceholder": "Nome da empresa ou pessoa",
+    "planLabel": "Plano",
+    "prepaid": "Pré-pago",
+    "prepaidDescription": "Saldo inicial de R$ 0,00. Recarregue créditos para enviar mensagens.",
+    "postpaid": "Pós-pago",
+    "postpaidDescription": "Limite mensal de R$ 100,00. Consumo faturado ao final do mês.",
+    "submitting": "Cadastrando...",
+    "submit": "Cadastrar",
+    "conflictError": "Este documento já está cadastrado.",
+    "genericError": "Não foi possível concluir o cadastro. Tente novamente.",
+    "hasAccount": "Já tem conta?",
+    "loginLink": "Entrar"
   },
   "dashboard": {
     "conversationsTitle": "Conversas",
