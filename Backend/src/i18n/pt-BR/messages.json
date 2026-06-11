@@ -1,0 +1,7 @@
+{
+  "CONVERSATION_NOT_FOUND": "Conversa não encontrada",
+  "RECIPIENT_NOT_FOUND": "Destinatário não encontrado",
+  "CONVERSATION_OR_RECIPIENT_REQUIRED": "Informe a conversa ou o destinatário",
+  "INSUFFICIENT_BALANCE": "Saldo insuficiente para enviar a mensagem",
+  "LIMIT_EXCEEDED": "Limite mensal excedido"
+}

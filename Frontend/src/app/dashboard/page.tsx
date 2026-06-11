@@ -1,14 +1,11 @@
 import { useTranslation } from 'react-i18next';
 
-export function ConversationsPage() {
+export function ConversationPlaceholder() {
   const { t } = useTranslation();
 
   return (
-    <div className="mx-auto min-h-screen max-w-3xl bg-white p-8 shadow-sm">
-      <h1 className="text-xl font-semibold">{t('dashboard.conversationsTitle')}</h1>
-      <p className="mt-4 text-sm text-slate-500">
-        {t('dashboard.conversationsTodo')}
-      </p>
+    <div className="flex flex-1 items-center justify-center bg-slate-50 p-8">
+      <p className="text-sm text-slate-500">{t('chat.selectConversation')}</p>
     </div>
   );
 }

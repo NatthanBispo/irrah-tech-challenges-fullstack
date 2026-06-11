@@ -1,17 +1,15 @@
-import type { Conversation, Message } from '../../../shared/types';
+import type { ConversationResponse, MessageResponse } from '../../../shared/types';
 import { api } from '../../../shared/services/api';
 
-export async function getConversations(): Promise<Conversation[]> {
-  // TODO: listar conversas do cliente autenticado
-  const { data } = await api.get<Conversation[]>('/conversations');
+export async function getConversations(): Promise<ConversationResponse[]> {
+  const { data } = await api.get<ConversationResponse[]>('/conversations');
   return data;
 }
 
 export async function getConversationMessages(
   conversationId: string,
-): Promise<Message[]> {
-  // TODO: listar mensagens de uma conversa
-  const { data } = await api.get<Message[]>(
+): Promise<MessageResponse[]> {
+  const { data } = await api.get<MessageResponse[]>(
     `/conversations/${conversationId}/messages`,
   );
   return data;

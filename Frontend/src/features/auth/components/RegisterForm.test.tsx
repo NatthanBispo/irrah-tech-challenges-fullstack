@@ -28,7 +28,7 @@ const mockPostpaidClient = {
   documentId: VALID_CNPJ,
   documentType: 'CNPJ' as const,
   planType: 'postpaid' as const,
-  limit: 100,
+  limit: 10000,
   active: true,
 };
 

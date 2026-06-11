@@ -1,0 +1,7 @@
+{
+  "PREPAID_ONLY": "Recarga de saldo disponível apenas para clientes pré-pago",
+  "POSTPAID_ONLY": "Esta operação é exclusiva para clientes pós-pago",
+  "SAME_PLAN": "O cliente já está neste plano",
+  "LIMIT_BELOW_USAGE": "O novo limite não pode ser menor que o consumo atual",
+  "INVALID_AMOUNT": "Informe um valor maior que zero"
+}

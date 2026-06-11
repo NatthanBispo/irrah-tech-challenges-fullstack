@@ -1,6 +1,6 @@
 # Big Chat Brasil (BCB) - Fullstack
 
-Solução do desafio técnico BCB.
+Solução do desafio técnico BCB — plataforma de chat para empresas comunicarem com clientes finais.
 
 ## Stack
 
@@ -8,51 +8,50 @@ Solução do desafio técnico BCB.
 - **Frontend:** React + TypeScript + Vite + TanStack Query + Tailwind CSS
 - **Infra:** Docker Compose
 
+## Premissas
+
+- Autenticação por **CPF/CNPJ** (sem senha); token = UUID do cliente (`client.id`)
+- Mensagens normais custam **R$ 0,25**; urgentes **R$ 0,50**
+- Fila in-memory com prioridade (urgente > normal) e worker simulando envio
+- Cliente demo no seed: CPF **39053344705** (saldo R$ 50,00, 2 conversas)
+
 ## Estrutura
 
 ```
 .
 ├── Backend/
-│   ├── prisma/schema.prisma
-│   └── src/
-│       ├── modules/auth/      # Autenticação e cadastro
-│       └── shared/
+│   ├── prisma/              # Schema, migrations, seed
+│   └── src/modules/
+│       ├── auth/            # POST /auth, POST /auth/register
+│       ├── conversations/   # GET /conversations, GET /:id/messages
+│       ├── messages/        # POST /messages + fila/worker
+│       └── recipients/      # GET /recipients
 ├── Frontend/
-│   └── src/
-│       ├── features/auth/
-│       ├── app/
-│       └── shared/
+│   └── src/features/        # auth, conversations, messages
 └── docker-compose.yml
 ```
 
 ## Como executar
 
-### Com Docker
+### Com Docker (recomendado)
 
 ```bash
-docker-compose up --build
+docker compose up --build
 ```
+
+O backend executa `prisma migrate deploy` e `prisma db seed` automaticamente.
 
 ### Localmente
 
 ```bash
-# Banco
-docker-compose up postgres -d
+docker compose up postgres -d
 
-# Backend
-cd Backend
-cp .env.example .env
-npm install
-npm run prisma:generate
-npm run prisma:migrate
-npm run prisma:seed
+cd Backend && cp .env.example .env
+npm install && npm run prisma:generate && npm run prisma:migrate && npm run prisma:seed
 npm run start:dev
 
-# Frontend
-cd Frontend
-cp .env.example .env
-npm install
-npm run dev
+cd Frontend && cp .env.example .env
+npm install && npm run dev
 ```
 
 ## Acessos
@@ -63,42 +62,41 @@ npm run dev
 | Backend | http://localhost:3000 |
 | Swagger | http://localhost:3000/docs |
 
-## Status
+## Fluxo de demonstração
 
-**Backend:**
-- [x] Autenticação por CPF/CNPJ e senha (`POST /auth`)
-- [x] Cadastro de cliente com escolha de plano (`POST /auth/register`)
-- [ ] Conversas e mensagens
-- [ ] Fila de mensagens
-- [ ] Validação financeira
+1. Acesse http://localhost:5173/login
+2. Informe CPF `39053344705` (cliente demo do seed)
+3. Veja conversas em `/dashboard`
+4. Abra um chat, envie mensagem normal ou urgente
+5. Observe status evoluir (Na fila → Entregue) e resposta automática do destinatário
 
-**Frontend:**
-- [x] Tela de login
-- [x] Tela de cadastro com escolha de plano
-- [ ] Lista de conversas
-- [ ] Interface de chat
+## API principal
 
-## Cadastro de cliente
+| Método | Rota | Descrição |
+|--------|------|-----------|
+| POST | `/auth` | Login por documento |
+| POST | `/auth/register` | Cadastro com plano |
+| GET | `/conversations` | Lista conversas (Bearer) |
+| GET | `/conversations/:id/messages` | Histórico (Bearer) |
+| POST | `/messages` | Enviar mensagem (Bearer) |
+| GET | `/recipients` | Destinatários para nova conversa (Bearer) |
 
-Endpoint: `POST /auth/register`
+### Login
 
 ```json
+POST /auth
+{ "documentId": "39053344705", "documentType": "CPF" }
+```
+
+### Cadastro
+
+```json
+POST /auth/register
 {
   "name": "Empresa ABC",
   "documentId": "39053344705",
   "documentType": "CPF",
-  "planType": "prepaid",
-  "password": "Senha1234"
-}
-```
-
-Login: `POST /auth`
-
-```json
-{
-  "documentId": "39053344705",
-  "documentType": "CPF",
-  "password": "Senha1234"
+  "planType": "prepaid"
 }
 ```
 
@@ -107,4 +105,17 @@ Login: `POST /auth`
 | Pré-pago (`prepaid`) | Saldo R$ 0,00 |
 | Pós-pago (`postpaid`) | Limite mensal R$ 100,00 |
 
-Após o cadastro, a API retorna `{ token, client }` e o frontend redireciona automaticamente para o dashboard.
+## Testes
+
+```bash
+cd Backend && npm test && npm run test:e2e
+cd Frontend && npm test
+```
+
+## Status
+
+**Backend:** auth, conversas, mensagens, fila com prioridade, validação financeira, PostgreSQL, Swagger, seed
+
+**Frontend:** login, cadastro, dashboard com lista de conversas, chat com histórico/envio, status visuais, layout responsivo, nova conversa
+
+**Integração:** fluxo completo login → conversas → mensagens; polling de status; tratamento 401/402

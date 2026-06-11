@@ -17,18 +17,111 @@ enum PlanType {
   postpaid
 }
 
+enum MessagePriority {
+  normal
+  urgent
+}
+
+enum MessageStatus {
+  queued
+  processing
+  sent
+  delivered
+  read
+  failed
+}
+
+enum SenderType {
+  client
+  user
+}
+
+enum MessageType {
+  sms
+  whatsapp
+}
+
+enum TransactionType {
+  debit
+  credit
+  postpaid_charge
+  plan_conversion_credit
+  postpaid_settlement
+}
+
 model Client {
-  id           String       @id @default(uuid())
-  name         String
-  documentId   String       @unique
-  documentType DocumentType
-  planType     PlanType
-  balance      Decimal      @default(0) @db.Decimal(10, 2)
-  limit        Decimal      @default(0) @db.Decimal(10, 2)
-  monthlyUsage Decimal      @default(0) @db.Decimal(10, 2)
-  active       Boolean      @default(true)
-  createdAt    DateTime     @default(now())
-  updatedAt    DateTime     @updatedAt
+  id            String         @id @default(uuid())
+  name          String
+  documentId    String         @unique
+  documentType  DocumentType
+  planType      PlanType
+  balance       Int            @default(0)
+  limit         Int            @default(0)
+  monthlyUsage  Int            @default(0)
+  active        Boolean        @default(true)
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+  conversations Conversation[]
+  transactions  Transaction[]
 
   @@map("clients")
+}
+
+model Recipient {
+  id            String         @id @default(uuid())
+  name          String
+  createdAt     DateTime       @default(now())
+  conversations Conversation[]
+
+  @@map("recipients")
+}
+
+model Conversation {
+  id          String    @id @default(uuid())
+  clientId    String
+  recipientId String
+  unreadCount Int       @default(0)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  client      Client    @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  recipient   Recipient @relation(fields: [recipientId], references: [id], onDelete: Cascade)
+  messages    Message[]
+
+  @@unique([clientId, recipientId])
+  @@map("conversations")
+}
+
+model Message {
+  id                String          @id @default(uuid())
+  conversationId    String
+  content           String
+  priority          MessagePriority
+  status            MessageStatus   @default(queued)
+  cost              Int             @default(0)
+  sentById          String
+  sentByType        SenderType
+  type              MessageType     @default(whatsapp)
+  timestamp         DateTime        @default(now())
+  estimatedDelivery DateTime?
+  conversation      Conversation    @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  transactions      Transaction[]
+
+  @@index([conversationId, timestamp])
+  @@map("messages")
+}
+
+model Transaction {
+  id           String          @id @default(uuid())
+  clientId     String
+  type         TransactionType
+  amount       Int
+  description  String
+  balanceAfter Int?
+  messageId    String?
+  createdAt    DateTime        @default(now())
+  client       Client          @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  message      Message?        @relation(fields: [messageId], references: [id], onDelete: SetNull)
+
+  @@index([clientId, createdAt])
+  @@map("transactions")
 }

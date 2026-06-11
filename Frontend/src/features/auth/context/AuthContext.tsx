@@ -15,6 +15,7 @@ interface AuthContextValue {
   client: Client | null;
   isAuthenticated: boolean;
   saveSession: (token: string, client: Client) => void;
+  updateClient: (client: Client) => void;
   logout: () => void;
 }
 
@@ -58,6 +59,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setClient(nextClient);
         api.defaults.headers.common.Authorization = `Bearer ${nextToken}`;
         localStorage.setItem(TOKEN_KEY, nextToken);
+        localStorage.setItem(CLIENT_KEY, JSON.stringify(nextClient));
+      },
+      updateClient: (nextClient) => {
+        setClient(nextClient);
         localStorage.setItem(CLIENT_KEY, JSON.stringify(nextClient));
       },
       logout: () => {

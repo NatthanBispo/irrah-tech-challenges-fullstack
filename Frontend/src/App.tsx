@@ -4,13 +4,17 @@ import { RegisterPage } from './app/(auth)/register/page';
 import { RootLayout } from './app/layout';
 import { HomePage } from './app/page';
 import { ChatPage } from './app/dashboard/[conversationId]/page';
-import { ConversationsPage } from './app/dashboard/page';
+import { NewConversationPage } from './app/dashboard/new/[recipientId]/page';
+import { DashboardLayout } from './app/dashboard/layout';
+import { ConversationPlaceholder } from './app/dashboard/page';
 import { GuestRoute } from './shared/components/GuestRoute';
 import { ProtectedRoute } from './shared/components/ProtectedRoute';
+import { AuthUnauthorizedBridge } from './shared/components/AuthUnauthorizedBridge';
 
 export default function App() {
   return (
     <BrowserRouter>
+      <AuthUnauthorizedBridge />
       <RootLayout>
         <Routes>
           <Route path="/" element={<HomePage />} />
@@ -34,18 +38,14 @@ export default function App() {
             path="/dashboard"
             element={
               <ProtectedRoute>
-                <ConversationsPage />
+                <DashboardLayout />
               </ProtectedRoute>
             }
-          />
-          <Route
-            path="/dashboard/:conversationId"
-            element={
-              <ProtectedRoute>
-                <ChatPage />
-              </ProtectedRoute>
-            }
-          />
+          >
+            <Route index element={<ConversationPlaceholder />} />
+            <Route path="new/:recipientId" element={<NewConversationPage />} />
+            <Route path=":conversationId" element={<ChatPage />} />
+          </Route>
         </Routes>
       </RootLayout>
     </BrowserRouter>
