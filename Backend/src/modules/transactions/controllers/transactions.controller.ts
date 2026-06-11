@@ -24,12 +24,31 @@ export class TransactionsController {
   ) {}
 
   @Get()
-  @ApiOperation({ summary: 'Lista histórico de transações financeiras' })
-  @ApiOkResponse({ type: TransactionResponseDto, isArray: true })
+  @ApiOperation({
+    summary: 'Lista histórico de transações financeiras',
+    description:
+      'Retorna todas as transações do cliente. Suporta filtro por tipo (`type`) e intervalo de datas (`from`/`to` no formato ISO 8601 ou `YYYY-MM-DD`).',
+  })
+  @ApiOkResponse({ type: TransactionResponseDto, isArray: true, description: 'Lista de transações ordenada da mais recente para a mais antiga' })
+  @ApiQuery({
+    name: 'type',
+    enum: TransactionType,
+    required: false,
+    description: 'Filtra por tipo de transação',
+  })
+  @ApiQuery({
+    name: 'from',
+    required: false,
+    example: '2026-06-01',
+    description: 'Data de início do filtro (ISO 8601)',
+  })
+  @ApiQuery({
+    name: 'to',
+    required: false,
+    example: '2026-06-30',
+    description: 'Data de fim do filtro (ISO 8601)',
+  })
   @ApiUnauthorizedResponse({ description: 'Token inválido ou ausente' })
-  @ApiQuery({ name: 'type', enum: TransactionType, required: false })
-  @ApiQuery({ name: 'from', required: false, example: '2026-06-01' })
-  @ApiQuery({ name: 'to', required: false, example: '2026-06-30' })
   list(
     @CurrentClient() client: Client,
     @Query('type') type?: TransactionType,

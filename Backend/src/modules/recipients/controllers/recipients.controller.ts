@@ -18,8 +18,11 @@ export class RecipientsController {
   constructor(private readonly listRecipientsService: ListRecipientsService) {}
 
   @Get()
-  @ApiOperation({ summary: 'Lista destinatários disponíveis para nova conversa' })
-  @ApiOkResponse({ type: RecipientResponseDto, isArray: true })
+  @ApiOperation({
+    summary: 'Lista destinatários disponíveis para nova conversa',
+    description: 'Retorna todos os destinatários cadastrados no sistema que podem receber mensagens.',
+  })
+  @ApiOkResponse({ type: RecipientResponseDto, isArray: true, description: 'Lista de destinatários' })
   @ApiUnauthorizedResponse({ description: 'Token inválido ou ausente' })
   list() {
     return this.listRecipientsService.execute();

@@ -1,5 +1,6 @@
 import { Body, Controller, Post, UseGuards } from '@nestjs/common';
 import {
+  ApiBadRequestResponse,
   ApiBearerAuth,
   ApiCreatedResponse,
   ApiOperation,
@@ -22,9 +23,16 @@ export class MessagesController {
   constructor(private readonly sendMessageService: SendMessageService) {}
 
   @Post()
-  @ApiOperation({ summary: 'Envia mensagem para conversa existente ou nova' })
-  @ApiCreatedResponse({ type: SendMessageResponseDto })
-  @ApiPaymentRequiredResponse({ description: 'Saldo insuficiente ou limite excedido' })
+  @ApiOperation({
+    summary: 'Envia mensagem para conversa existente ou nova',
+    description:
+      'Informe `conversationId` para uma conversa existente ou `recipientId` para iniciar uma nova. ' +
+      'Mensagens normais custam R$ 0,25 (25 centavos) e urgentes R$ 0,50 (50 centavos). ' +
+      'O campo `type` define o canal (`whatsapp` padrão ou `sms`).',
+  })
+  @ApiCreatedResponse({ type: SendMessageResponseDto, description: 'Mensagem enfileirada com sucesso' })
+  @ApiBadRequestResponse({ description: 'Dados inválidos ou conversationId/recipientId não informado' })
+  @ApiPaymentRequiredResponse({ description: 'Saldo insuficiente (pré-pago) ou limite mensal excedido (pós-pago)' })
   @ApiUnauthorizedResponse({ description: 'Token inválido ou ausente' })
   send(@CurrentClient() client: Client, @Body() dto: SendMessageDto) {
     return this.sendMessageService.execute(client, dto);
