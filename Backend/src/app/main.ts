@@ -1,5 +1,6 @@
 import { ValidationPipe } from '@nestjs/common';
 import { NestFactory } from '@nestjs/core';
+import { IoAdapter } from '@nestjs/platform-socket.io';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import {
   I18nService,
@@ -15,6 +16,8 @@ async function bootstrap() {
     origin: process.env.CORS_ORIGIN ?? 'http://localhost:5173',
     credentials: true,
   });
+
+  app.useWebSocketAdapter(new IoAdapter(app));
 
   app.useGlobalPipes(
     new I18nValidationPipe({

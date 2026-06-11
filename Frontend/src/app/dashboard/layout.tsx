@@ -5,10 +5,12 @@ import { ConversationList } from '../../features/conversations/components/Conver
 import { NewConversationButton } from '../../features/conversations/components/NewConversationButton';
 import { BillingPanel } from '../../features/billing/components/BillingPanel';
 import { formatCents } from '../../shared/utils/money';
+import { useMessageSocket } from '../../shared/hooks/useMessageSocket';
 
 export function DashboardLayout() {
   const { t } = useTranslation();
   const { client, logout } = useAuth();
+  useMessageSocket();
   const navigate = useNavigate();
   const { conversationId, recipientId } = useParams();
   const showChat = Boolean(conversationId || recipientId);

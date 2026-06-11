@@ -6,6 +6,7 @@ import {
   MessageType,
   SenderType,
 } from '@prisma/client';
+import { MessagesGateway } from '../gateways/messages.gateway';
 import { MessagesRepository } from '../repositories/messages.repository';
 import { MessageQueueService } from './message-queue.service';
 
@@ -30,6 +31,7 @@ export class QueueWorkerService {
   constructor(
     private readonly messagesRepository: MessagesRepository,
     private readonly messageQueue: MessageQueueService,
+    private readonly gateway: MessagesGateway,
   ) {}
 
   @Interval(2000)
@@ -56,11 +58,19 @@ export class QueueWorkerService {
         message.status === MessageStatus.queued ||
         message.status === MessageStatus.processing
       ) {
+        const clientId = message.conversation.clientId;
+        const conversationId = message.conversation.id;
+
         if (message.status === MessageStatus.queued) {
           await this.messagesRepository.updateMessageStatus(
             messageId,
             MessageStatus.processing,
           );
+          this.gateway.emitStatusUpdate(clientId, {
+            messageId,
+            conversationId,
+            status: MessageStatus.processing,
+          });
 
           await this.delay(PROCESSING_DELAYS_MS[message.priority]);
         }
@@ -69,6 +79,11 @@ export class QueueWorkerService {
           messageId,
           MessageStatus.sent,
         );
+        this.gateway.emitStatusUpdate(clientId, {
+          messageId,
+          conversationId,
+          status: MessageStatus.sent,
+        });
 
         await this.delay(DELIVERY_DELAY_MS);
 
@@ -76,9 +91,15 @@ export class QueueWorkerService {
           messageId,
           MessageStatus.delivered,
         );
+        this.gateway.emitStatusUpdate(clientId, {
+          messageId,
+          conversationId,
+          status: MessageStatus.delivered,
+        });
 
         if (message.sentByType === SenderType.client) {
           await this.sendAutoReply(message.conversation, message.type);
+          this.gateway.emitNewReply(clientId, { conversationId });
         }
 
         this.logger.debug(`Mensagem ${messageId} entregue`);
@@ -89,6 +110,15 @@ export class QueueWorkerService {
         messageId,
         MessageStatus.failed,
       );
+
+      const message = await this.messagesRepository.findMessageById(messageId).catch(() => null);
+      if (message) {
+        this.gateway.emitStatusUpdate(message.conversation.clientId, {
+          messageId,
+          conversationId: message.conversation.id,
+          status: MessageStatus.failed,
+        });
+      }
     } finally {
       this.processing = false;
     }

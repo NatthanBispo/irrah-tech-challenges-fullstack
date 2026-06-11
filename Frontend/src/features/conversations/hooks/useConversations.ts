@@ -5,6 +5,6 @@ export function useConversations() {
   return useQuery({
     queryKey: ['conversations'],
     queryFn: getConversations,
-    refetchInterval: 3000,
+    refetchInterval: 15000,
   });
 }
