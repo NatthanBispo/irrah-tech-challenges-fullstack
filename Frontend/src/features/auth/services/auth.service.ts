@@ -8,6 +8,7 @@ import { api } from '../../../shared/services/api';
 export interface LoginPayload {
   documentId: string;
   documentType: DocumentType;
+  password: string;
 }
 
 export async function login(payload: LoginPayload): Promise<AuthResponse> {

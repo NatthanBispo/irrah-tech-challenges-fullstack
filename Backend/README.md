@@ -11,13 +11,14 @@ npm run prisma:migrate
 npm run prisma:seed
 npm test
 npm run test:e2e   # aplica migrations + seed automaticamente (requer Postgres rodando)
+npm test && npm run test:e2e   # todos os testes do backend
 ```
 
 ## Módulos
 
 | Módulo | Rota | Status |
 |--------|------|--------|
-| auth | `POST /auth` | Implementado |
+| auth | `POST /auth`, `POST /auth/register` | Implementado (com senha) |
 
 ## Exemplos de documentos válidos
 

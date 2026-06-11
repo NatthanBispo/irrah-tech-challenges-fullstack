@@ -6,6 +6,7 @@ export interface ClientEntity {
   name: string;
   documentId: string;
   documentType: DocumentTypeValue;
+  passwordHash: string;
   planType: PlanTypeValue;
   balance: { toString(): string } | number;
   limit: { toString(): string } | number;

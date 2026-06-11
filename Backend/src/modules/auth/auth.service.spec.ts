@@ -1,9 +1,17 @@
-import { ConflictException, NotFoundException } from '@nestjs/common';
+import { ConflictException, UnauthorizedException } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
+import * as bcrypt from 'bcrypt';
 import { I18nService } from 'nestjs-i18n';
 import { PrismaService } from '../../shared/database/prisma.service';
 import { DocumentType, PlanType } from '../../shared/utils/enums';
 import { AuthService } from './auth.service';
+
+jest.mock('bcrypt', () => ({
+  hash: jest.fn().mockResolvedValue('hashed-password'),
+  compare: jest.fn(),
+}));
+
+const PASSWORD = 'Senha1234';
 
 describe('AuthService', () => {
   let service: AuthService;
@@ -29,6 +37,7 @@ describe('AuthService', () => {
     balance: 50,
     limit: 0,
     active: true,
+    passwordHash: 'hashed-password',
   };
 
   beforeEach(async () => {
@@ -42,16 +51,19 @@ describe('AuthService', () => {
 
     service = module.get(AuthService);
     jest.clearAllMocks();
+    jest.mocked(bcrypt.compare).mockResolvedValue(true as never);
   });
 
-  it('autentica cliente ativo e retorna token e dados', async () => {
+  it('autentica cliente ativo com senha correta e retorna token e dados', async () => {
     prisma.client.findFirst.mockResolvedValue(prepaidClient);
 
     const result = await service.authenticate({
       documentId: '39053344705',
       documentType: DocumentType.CPF,
+      password: PASSWORD,
     });
 
+    expect(bcrypt.compare).toHaveBeenCalledWith(PASSWORD, 'hashed-password');
     expect(result.token).toBe('client-1');
     expect(result.client).toEqual({
       id: 'client-1',
@@ -65,20 +77,22 @@ describe('AuthService', () => {
     });
   });
 
-  it('lança NotFoundException quando cliente não existe', async () => {
+  it('lança UnauthorizedException quando cliente não existe', async () => {
     prisma.client.findFirst.mockResolvedValue(null);
 
     await expect(
       service.authenticate({
         documentId: '52998224725',
         documentType: DocumentType.CPF,
+        password: PASSWORD,
       }),
-    ).rejects.toThrow(NotFoundException);
+    ).rejects.toThrow(UnauthorizedException);
 
-    expect(i18n.t).toHaveBeenCalledWith('auth.CLIENT_NOT_FOUND');
+    expect(i18n.t).toHaveBeenCalledWith('auth.INVALID_CREDENTIALS');
+    expect(bcrypt.compare).not.toHaveBeenCalled();
   });
 
-  it('lança NotFoundException quando cliente está inativo', async () => {
+  it('lança UnauthorizedException quando cliente está inativo', async () => {
     prisma.client.findFirst.mockResolvedValue({
       ...prepaidClient,
       active: false,
@@ -88,13 +102,30 @@ describe('AuthService', () => {
       service.authenticate({
         documentId: '39053344705',
         documentType: DocumentType.CPF,
+        password: PASSWORD,
       }),
-    ).rejects.toThrow(NotFoundException);
+    ).rejects.toThrow(UnauthorizedException);
 
-    expect(i18n.t).toHaveBeenCalledWith('auth.CLIENT_INACTIVE');
+    expect(i18n.t).toHaveBeenCalledWith('auth.INVALID_CREDENTIALS');
+    expect(bcrypt.compare).not.toHaveBeenCalled();
   });
 
-  it('cadastra cliente pré-pago com saldo zero', async () => {
+  it('lança UnauthorizedException quando senha está incorreta', async () => {
+    prisma.client.findFirst.mockResolvedValue(prepaidClient);
+    jest.mocked(bcrypt.compare).mockResolvedValue(false as never);
+
+    await expect(
+      service.authenticate({
+        documentId: '39053344705',
+        documentType: DocumentType.CPF,
+        password: 'SenhaErrada',
+      }),
+    ).rejects.toThrow(UnauthorizedException);
+
+    expect(i18n.t).toHaveBeenCalledWith('auth.INVALID_CREDENTIALS');
+  });
+
+  it('cadastra cliente pré-pago com senha hasheada e saldo zero', async () => {
     prisma.client.findUnique.mockResolvedValue(null);
     prisma.client.create.mockResolvedValue({
       ...prepaidClient,
@@ -106,14 +137,17 @@ describe('AuthService', () => {
       documentId: '39053344705',
       documentType: DocumentType.CPF,
       planType: PlanType.prepaid,
+      password: PASSWORD,
     });
 
+    expect(bcrypt.hash).toHaveBeenCalledWith(PASSWORD, 10);
     expect(prisma.client.create).toHaveBeenCalledWith({
       data: {
         name: 'Empresa ABC',
         documentId: '39053344705',
         documentType: DocumentType.CPF,
         planType: PlanType.prepaid,
+        passwordHash: 'hashed-password',
         balance: 0,
         limit: 0,
         monthlyUsage: 0,
@@ -136,6 +170,7 @@ describe('AuthService', () => {
       balance: 0,
       limit: 100,
       active: true,
+      passwordHash: 'hashed-password',
     });
 
     const result = await service.register({
@@ -143,6 +178,7 @@ describe('AuthService', () => {
       documentId: '11222333000181',
       documentType: DocumentType.CNPJ,
       planType: PlanType.postpaid,
+      password: PASSWORD,
     });
 
     expect(prisma.client.create).toHaveBeenCalledWith({
@@ -150,6 +186,7 @@ describe('AuthService', () => {
         planType: PlanType.postpaid,
         limit: 100,
         balance: 0,
+        passwordHash: 'hashed-password',
       }),
     });
     expect(result.client.limit).toBe(100);
@@ -165,6 +202,7 @@ describe('AuthService', () => {
         documentId: '39053344705',
         documentType: DocumentType.CPF,
         planType: PlanType.prepaid,
+        password: PASSWORD,
       }),
     ).rejects.toThrow(ConflictException);
 

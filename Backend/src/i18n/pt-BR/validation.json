@@ -6,5 +6,8 @@
   "NAME_STRING": "O nome deve ser um texto",
   "PLAN_TYPE_ENUM": "O plano deve ser pré-pago ou pós-pago",
   "CPF_INVALID": "Informe um CPF válido",
-  "CNPJ_INVALID": "Informe um CNPJ válido"
+  "CNPJ_INVALID": "Informe um CNPJ válido",
+  "PASSWORD_REQUIRED": "A senha é obrigatória",
+  "PASSWORD_STRING": "A senha deve ser um texto",
+  "PASSWORD_MIN_LENGTH": "A senha deve ter pelo menos 8 caracteres"
 }

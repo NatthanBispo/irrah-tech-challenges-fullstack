@@ -66,7 +66,7 @@ npm run dev
 ## Status
 
 **Backend:**
-- [x] Autenticação por CPF/CNPJ (`POST /auth`)
+- [x] Autenticação por CPF/CNPJ e senha (`POST /auth`)
 - [x] Cadastro de cliente com escolha de plano (`POST /auth/register`)
 - [ ] Conversas e mensagens
 - [ ] Fila de mensagens
@@ -87,7 +87,18 @@ Endpoint: `POST /auth/register`
   "name": "Empresa ABC",
   "documentId": "39053344705",
   "documentType": "CPF",
-  "planType": "prepaid"
+  "planType": "prepaid",
+  "password": "Senha1234"
+}
+```
+
+Login: `POST /auth`
+
+```json
+{
+  "documentId": "39053344705",
+  "documentType": "CPF",
+  "password": "Senha1234"
 }
 ```
 

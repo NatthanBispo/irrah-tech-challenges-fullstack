@@ -31,6 +31,7 @@ export interface RegisterPayload {
   documentId: string;
   documentType: DocumentType;
   planType: PlanType;
+  password: string;
 }
 
 export interface Conversation {

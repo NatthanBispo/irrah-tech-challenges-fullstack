@@ -11,6 +11,7 @@ vi.mock('../services/auth.service');
 
 const VALID_CPF = '39053344705';
 const VALID_CNPJ = '11222333000181';
+const PASSWORD = 'Senha1234';
 
 const mockPrepaidClient = {
   id: 'client-id',
@@ -41,6 +42,34 @@ function RegisterRoutes() {
         element={<div data-testid="dashboard">Dashboard</div>}
       />
     </Routes>
+  );
+}
+
+async function fillRegisterForm(
+  user: ReturnType<typeof userEvent.setup>,
+  options: {
+    name: string;
+    document: string;
+    password?: string;
+    confirmPassword?: string;
+    documentPlaceholder?: string;
+  },
+) {
+  await user.type(
+    screen.getByPlaceholderText('Nome da empresa ou pessoa'),
+    options.name,
+  );
+  await user.type(
+    screen.getByPlaceholderText(options.documentPlaceholder ?? '000.000.000-00'),
+    options.document,
+  );
+  await user.type(
+    screen.getByPlaceholderText('Crie uma senha'),
+    options.password ?? PASSWORD,
+  );
+  await user.type(
+    screen.getByPlaceholderText('Repita a senha'),
+    options.confirmPassword ?? options.password ?? PASSWORD,
   );
 }
 
@@ -75,11 +104,10 @@ describe('RegisterForm', () => {
       routerProps: { initialEntries: ['/'] },
     });
 
-    await user.type(
-      screen.getByPlaceholderText('Nome da empresa ou pessoa'),
-      'Empresa Teste',
-    );
-    await user.type(screen.getByPlaceholderText('000.000.000-00'), VALID_CPF);
+    await fillRegisterForm(user, {
+      name: 'Empresa Teste',
+      document: VALID_CPF,
+    });
     await user.click(screen.getByRole('button', { name: 'Cadastrar' }));
 
     await waitFor(() => {
@@ -91,6 +119,7 @@ describe('RegisterForm', () => {
       documentId: VALID_CPF,
       documentType: 'CPF',
       planType: 'prepaid',
+      password: PASSWORD,
     });
     expect(localStorage.getItem(TOKEN_KEY)).toBe('client-id');
   });
@@ -107,15 +136,12 @@ describe('RegisterForm', () => {
       routerProps: { initialEntries: ['/'] },
     });
 
-    await user.type(
-      screen.getByPlaceholderText('Nome da empresa ou pessoa'),
-      'Tech Solutions',
-    );
     await user.click(screen.getByRole('radio', { name: /PJ \(CNPJ\)/ }));
-    await user.type(
-      screen.getByPlaceholderText('00.000.000/0000-00'),
-      VALID_CNPJ,
-    );
+    await fillRegisterForm(user, {
+      name: 'Tech Solutions',
+      document: VALID_CNPJ,
+      documentPlaceholder: '00.000.000/0000-00',
+    });
     await user.click(screen.getByRole('radio', { name: /Pós-pago/ }));
     await user.click(screen.getByRole('button', { name: 'Cadastrar' }));
 
@@ -125,6 +151,7 @@ describe('RegisterForm', () => {
         documentId: VALID_CNPJ,
         documentType: 'CNPJ',
         planType: 'postpaid',
+        password: PASSWORD,
       });
     });
   });
@@ -136,15 +163,56 @@ describe('RegisterForm', () => {
       routerProps: { initialEntries: ['/'] },
     });
 
-    await user.type(
-      screen.getByPlaceholderText('Nome da empresa ou pessoa'),
-      'Empresa Teste',
-    );
-    await user.type(screen.getByPlaceholderText('000.000.000-00'), '12345678901');
+    await fillRegisterForm(user, {
+      name: 'Empresa Teste',
+      document: '12345678901',
+    });
     await user.click(screen.getByRole('button', { name: 'Cadastrar' }));
 
     expect(
       await screen.findByText('Informe um CPF válido.'),
+    ).toBeInTheDocument();
+    expect(authService.register).not.toHaveBeenCalled();
+  });
+
+  it('exibe erro quando senhas não coincidem', async () => {
+    const user = userEvent.setup();
+
+    renderWithProviders(<RegisterForm />, {
+      routerProps: { initialEntries: ['/'] },
+    });
+
+    await fillRegisterForm(user, {
+      name: 'Empresa Teste',
+      document: VALID_CPF,
+      password: PASSWORD,
+      confirmPassword: 'OutraSenha',
+    });
+    await user.click(screen.getByRole('button', { name: 'Cadastrar' }));
+
+    expect(
+      await screen.findByText('As senhas não coincidem.'),
+    ).toBeInTheDocument();
+    expect(authService.register).not.toHaveBeenCalled();
+  });
+
+  it('exibe erro quando senha é curta', async () => {
+    const user = userEvent.setup();
+
+    renderWithProviders(<RegisterForm />, {
+      routerProps: { initialEntries: ['/'] },
+    });
+
+    await fillRegisterForm(user, {
+      name: 'Empresa Teste',
+      document: VALID_CPF,
+      password: 'curta',
+      confirmPassword: 'curta',
+    });
+    await user.click(screen.getByRole('button', { name: 'Cadastrar' }));
+
+    expect(
+      await screen.findByText('A senha deve ter pelo menos 8 caracteres.'),
     ).toBeInTheDocument();
     expect(authService.register).not.toHaveBeenCalled();
   });
@@ -160,11 +228,10 @@ describe('RegisterForm', () => {
       routerProps: { initialEntries: ['/'] },
     });
 
-    await user.type(
-      screen.getByPlaceholderText('Nome da empresa ou pessoa'),
-      'Empresa Teste',
-    );
-    await user.type(screen.getByPlaceholderText('000.000.000-00'), VALID_CPF);
+    await fillRegisterForm(user, {
+      name: 'Empresa Teste',
+      document: VALID_CPF,
+    });
     await user.click(screen.getByRole('button', { name: 'Cadastrar' }));
 
     expect(

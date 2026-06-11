@@ -9,6 +9,8 @@ import { App } from 'supertest/types';
 import { AppModule } from './../src/app/app.module';
 import { PrismaService } from './../src/shared/database/prisma.service';
 
+const PASSWORD = 'Senha1234';
+
 describe('BCB API (e2e)', () => {
   let app: INestApplication<App>;
 
@@ -40,6 +42,7 @@ describe('BCB API (e2e)', () => {
         documentId: '39053344705',
         documentType: 'CPF',
         planType: 'prepaid',
+        password: PASSWORD,
       })
       .expect(201)
       .expect((response) => {
@@ -59,6 +62,7 @@ describe('BCB API (e2e)', () => {
         documentId: '11222333000181',
         documentType: 'CNPJ',
         planType: 'postpaid',
+        password: PASSWORD,
       })
       .expect(201)
       .expect((response) => {
@@ -75,12 +79,17 @@ describe('BCB API (e2e)', () => {
         documentId: '98765432100',
         documentType: 'CPF',
         planType: 'prepaid',
+        password: PASSWORD,
       })
       .expect(201);
 
     return request(app.getHttpServer())
       .post('/auth')
-      .send({ documentId: '98765432100', documentType: 'CPF' })
+      .send({
+        documentId: '98765432100',
+        documentType: 'CPF',
+        password: PASSWORD,
+      })
       .expect(200)
       .expect((response) => {
         expect(response.body.token).toBeDefined();
@@ -96,6 +105,7 @@ describe('BCB API (e2e)', () => {
         documentId: '11144477735',
         documentType: 'CPF',
         planType: 'prepaid',
+        password: PASSWORD,
       })
       .expect(201);
 
@@ -106,6 +116,7 @@ describe('BCB API (e2e)', () => {
         documentId: '11144477735',
         documentType: 'CPF',
         planType: 'postpaid',
+        password: PASSWORD,
       })
       .expect(409)
       .expect((response) => {
@@ -113,24 +124,92 @@ describe('BCB API (e2e)', () => {
       });
   });
 
-  it('POST /auth retorna 404 para cliente inexistente', () => {
+  it('POST /auth retorna 401 para cliente inexistente', () => {
     return request(app.getHttpServer())
       .post('/auth')
-      .send({ documentId: '52998224725', documentType: 'CPF' })
-      .expect(404)
+      .send({
+        documentId: '52998224725',
+        documentType: 'CPF',
+        password: PASSWORD,
+      })
+      .expect(401)
       .expect((response) => {
-        expect(response.body.message).toBe('Cliente não encontrado');
+        expect(response.body.message).toBe('Documento ou senha incorretos');
+      });
+  });
+
+  it('POST /auth retorna 401 para senha incorreta', async () => {
+    await request(app.getHttpServer())
+      .post('/auth/register')
+      .send({
+        name: 'Cliente Senha',
+        documentId: '39053344705',
+        documentType: 'CPF',
+        planType: 'prepaid',
+        password: PASSWORD,
+      })
+      .expect(201);
+
+    return request(app.getHttpServer())
+      .post('/auth')
+      .send({
+        documentId: '39053344705',
+        documentType: 'CPF',
+        password: 'SenhaErrada',
+      })
+      .expect(401)
+      .expect((response) => {
+        expect(response.body.message).toBe('Documento ou senha incorretos');
       });
   });
 
   it('POST /auth retorna 400 para CPF inválido', () => {
     return request(app.getHttpServer())
       .post('/auth')
-      .send({ documentId: '12345678901', documentType: 'CPF' })
+      .send({
+        documentId: '12345678901',
+        documentType: 'CPF',
+        password: PASSWORD,
+      })
       .expect(400)
       .expect((response) => {
         expect(response.body.message[0].constraints.isValidDocument).toBe(
           'Informe um CPF válido',
+        );
+      });
+  });
+
+  it('POST /auth/register retorna 400 sem senha', () => {
+    return request(app.getHttpServer())
+      .post('/auth/register')
+      .send({
+        name: 'Empresa ABC',
+        documentId: '39053344705',
+        documentType: 'CPF',
+        planType: 'prepaid',
+      })
+      .expect(400)
+      .expect((response) => {
+        expect(response.body.message[0].constraints.isNotEmpty).toBe(
+          'A senha é obrigatória',
+        );
+      });
+  });
+
+  it('POST /auth/register retorna 400 para senha curta', () => {
+    return request(app.getHttpServer())
+      .post('/auth/register')
+      .send({
+        name: 'Empresa ABC',
+        documentId: '39053344705',
+        documentType: 'CPF',
+        planType: 'prepaid',
+        password: 'curta',
+      })
+      .expect(400)
+      .expect((response) => {
+        expect(response.body.message[0].constraints.minLength).toBe(
+          'A senha deve ter pelo menos 8 caracteres',
         );
       });
   });

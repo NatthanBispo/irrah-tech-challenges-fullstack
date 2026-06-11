@@ -11,6 +11,7 @@ vi.mock('../services/auth.service');
 
 const VALID_CPF = '39053344705';
 const VALID_CNPJ = '11222333000181';
+const PASSWORD = 'Senha1234';
 
 const mockClient = {
   id: 'client-id',
@@ -31,6 +32,15 @@ function LoginRoutes() {
       />
     </Routes>
   );
+}
+
+async function fillLoginForm(
+  user: ReturnType<typeof userEvent.setup>,
+  document: string,
+  password = PASSWORD,
+) {
+  await user.type(screen.getByPlaceholderText('000.000.000-00'), document);
+  await user.type(screen.getByPlaceholderText('Digite sua senha'), password);
 }
 
 describe('LoginForm', () => {
@@ -76,7 +86,7 @@ describe('LoginForm', () => {
       routerProps: { initialEntries: ['/'] },
     });
 
-    await user.type(screen.getByPlaceholderText('000.000.000-00'), VALID_CPF);
+    await fillLoginForm(user, VALID_CPF);
     await user.click(screen.getByRole('button', { name: 'Entrar' }));
 
     await waitFor(() => {
@@ -86,6 +96,7 @@ describe('LoginForm', () => {
     expect(authService.login).toHaveBeenCalledWith({
       documentId: VALID_CPF,
       documentType: 'CPF',
+      password: PASSWORD,
     });
     expect(localStorage.getItem(TOKEN_KEY)).toBe('client-id');
     expect(JSON.parse(localStorage.getItem(CLIENT_KEY)!)).toEqual(mockClient);
@@ -108,13 +119,14 @@ describe('LoginForm', () => {
       routerProps: { initialEntries: ['/'] },
     });
 
-    await user.type(screen.getByPlaceholderText('000.000.000-00'), VALID_CNPJ);
+    await fillLoginForm(user, VALID_CNPJ);
     await user.click(screen.getByRole('button', { name: 'Entrar' }));
 
     await waitFor(() => {
       expect(authService.login).toHaveBeenCalledWith({
         documentId: VALID_CNPJ,
         documentType: 'CNPJ',
+        password: PASSWORD,
       });
     });
   });
@@ -126,7 +138,7 @@ describe('LoginForm', () => {
       routerProps: { initialEntries: ['/'] },
     });
 
-    await user.type(screen.getByPlaceholderText('000.000.000-00'), '123456');
+    await fillLoginForm(user, '123456');
     await user.click(screen.getByRole('button', { name: 'Entrar' }));
 
     expect(
@@ -144,11 +156,27 @@ describe('LoginForm', () => {
       routerProps: { initialEntries: ['/'] },
     });
 
-    await user.type(screen.getByPlaceholderText('000.000.000-00'), '12345678901');
+    await fillLoginForm(user, '12345678901');
     await user.click(screen.getByRole('button', { name: 'Entrar' }));
 
     expect(
       await screen.findByText('Informe um CPF válido.'),
+    ).toBeInTheDocument();
+    expect(authService.login).not.toHaveBeenCalled();
+  });
+
+  it('exibe erro quando senha não é informada', async () => {
+    const user = userEvent.setup();
+
+    renderWithProviders(<LoginForm />, {
+      routerProps: { initialEntries: ['/'] },
+    });
+
+    await user.type(screen.getByPlaceholderText('000.000.000-00'), VALID_CPF);
+    await user.click(screen.getByRole('button', { name: 'Entrar' }));
+
+    expect(
+      await screen.findByText('Informe sua senha.'),
     ).toBeInTheDocument();
     expect(authService.login).not.toHaveBeenCalled();
   });
@@ -162,11 +190,11 @@ describe('LoginForm', () => {
       routerProps: { initialEntries: ['/'] },
     });
 
-    await user.type(screen.getByPlaceholderText('000.000.000-00'), '52998224725');
+    await fillLoginForm(user, '52998224725');
     await user.click(screen.getByRole('button', { name: 'Entrar' }));
 
     expect(
-      await screen.findByText('Documento não encontrado ou cliente inativo.'),
+      await screen.findByText('Documento ou senha incorretos.'),
     ).toBeInTheDocument();
   });
 });
