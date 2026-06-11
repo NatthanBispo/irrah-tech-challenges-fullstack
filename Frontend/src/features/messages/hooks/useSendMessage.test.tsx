@@ -43,6 +43,7 @@ const postpaidClient = {
   documentType: 'CNPJ' as const,
   planType: 'postpaid' as const,
   limit: 10000,
+  monthlyUsage: 4000,
   active: true,
 };
 
@@ -127,7 +128,7 @@ describe('useSendMessage', () => {
     });
   });
 
-  it('não atualiza saldo para cliente pós-pago sem currentBalance', async () => {
+  it('incrementa monthlyUsage do cliente pós-pago após envio', async () => {
     vi.mocked(authContext.useAuth).mockReturnValue({
       client: postpaidClient,
       token: 'token',
@@ -153,10 +154,43 @@ describe('useSendMessage', () => {
     result.current.mutate({ content: 'Olá', priority: 'normal' });
 
     await waitFor(() => {
-      expect(messagesService.sendMessage).toHaveBeenCalled();
+      expect(updateClient).toHaveBeenCalledWith({
+        ...postpaidClient,
+        monthlyUsage: 4025,
+      });
+    });
+  });
+
+  it('incrementa monthlyUsage a partir de zero quando não estava definido', async () => {
+    vi.mocked(authContext.useAuth).mockReturnValue({
+      client: { ...postpaidClient, monthlyUsage: undefined },
+      token: 'token',
+      isAuthenticated: true,
+      saveSession: vi.fn(),
+      updateClient,
+      logout: vi.fn(),
     });
 
-    expect(updateClient).not.toHaveBeenCalled();
+    vi.mocked(messagesService.sendMessage).mockResolvedValue({
+      id: 'msg-3',
+      status: 'queued',
+      timestamp: '2026-06-11T12:00:00.000Z',
+      estimatedDelivery: '2026-06-11T12:00:30.000Z',
+      cost: 50,
+    });
+
+    const { result } = renderHook(
+      () => useSendMessage({ conversationId: 'conv-1' }),
+      { wrapper: createWrapper() },
+    );
+
+    result.current.mutate({ content: 'Urgente', priority: 'urgent' });
+
+    await waitFor(() => {
+      expect(updateClient).toHaveBeenCalledWith(
+        expect.objectContaining({ monthlyUsage: 50 }),
+      );
+    });
   });
 
   it('navega para conversa criada ao enviar para novo destinatário', async () => {

@@ -1,9 +1,10 @@
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Link } from 'react-router-dom';
-import type { DocumentType, PlanType } from '../../../shared/types';
+import type { PlanType } from '../../../shared/types';
 import {
-  formatDocument,
+  detectDocumentType,
+  formatDocumentAuto,
   stripDocument,
 } from '../../../shared/utils/document-mask';
 import { isValidDocument } from '../../../shared/utils/document-validation';
@@ -13,15 +14,12 @@ export function RegisterForm() {
   const { t } = useTranslation();
   const [name, setName] = useState('');
   const [documentId, setDocumentId] = useState('');
-  const [documentType, setDocumentType] = useState<DocumentType>('CPF');
   const [planType, setPlanType] = useState<PlanType>('prepaid');
   const [validationError, setValidationError] = useState<string | null>(null);
   const { mutate, isPending, isError, error } = useRegister();
 
-  function handleDocumentTypeChange(type: DocumentType) {
-    setDocumentType(type);
-    setDocumentId((current) => formatDocument(current, type));
-  }
+  const stripped = stripDocument(documentId);
+  const detectedType = detectDocumentType(stripped);
 
   const isConflict =
     isError &&
@@ -36,11 +34,15 @@ export function RegisterForm() {
       className="space-y-5"
       onSubmit={(event) => {
         event.preventDefault();
-        const stripped = stripDocument(documentId);
 
-        if (!isValidDocument(stripped, documentType)) {
+        if (!detectedType) {
+          setValidationError(t('auth.invalidDocumentLength'));
+          return;
+        }
+
+        if (!isValidDocument(stripped, detectedType)) {
           setValidationError(
-            documentType === 'CNPJ'
+            detectedType === 'CNPJ'
               ? t('auth.invalidCnpj')
               : t('auth.invalidCpf'),
           );
@@ -51,7 +53,7 @@ export function RegisterForm() {
         mutate({
           name,
           documentId: stripped,
-          documentType,
+          documentType: detectedType,
           planType,
         });
       }}
@@ -74,53 +76,26 @@ export function RegisterForm() {
       <div>
         <label className="mb-1 block text-sm font-medium text-slate-700">
           {t('auth.documentLabel')}
+          {detectedType && (
+            <span className="ml-2 text-xs font-normal text-slate-400">
+              {detectedType === 'CPF' ? t('auth.cpf') : t('auth.cnpj')}
+            </span>
+          )}
         </label>
         <input
           type="text"
           inputMode="numeric"
           value={documentId}
           onChange={(e) => {
-            setDocumentId(formatDocument(e.target.value, documentType));
+            setDocumentId(formatDocumentAuto(e.target.value));
             setValidationError(null);
           }}
-          placeholder={
-            documentType === 'CPF'
-              ? t('auth.documentPlaceholderCpf')
-              : t('auth.documentPlaceholderCnpj')
-          }
-          maxLength={documentType === 'CPF' ? 14 : 18}
+          placeholder={t('auth.documentPlaceholderCpf')}
+          maxLength={18}
           required
           disabled={isPending}
           className="w-full rounded-lg border border-slate-300 px-4 py-3 text-sm outline-none transition focus:border-blue-500 focus:ring-1 focus:ring-blue-500 disabled:opacity-60"
         />
-      </div>
-
-      <div>
-        <p className="mb-2 text-sm font-medium text-slate-700">
-          {t('auth.typeLabel')}
-        </p>
-        <div className="flex gap-6">
-          <label className="flex cursor-pointer items-center gap-2 text-sm text-slate-700">
-            <input
-              type="radio"
-              name="documentType"
-              checked={documentType === 'CPF'}
-              onChange={() => handleDocumentTypeChange('CPF')}
-              disabled={isPending}
-            />
-            {t('auth.cpf')}
-          </label>
-          <label className="flex cursor-pointer items-center gap-2 text-sm text-slate-700">
-            <input
-              type="radio"
-              name="documentType"
-              checked={documentType === 'CNPJ'}
-              onChange={() => handleDocumentTypeChange('CNPJ')}
-              disabled={isPending}
-            />
-            {t('auth.cnpj')}
-          </label>
-        </div>
       </div>
 
       <div>

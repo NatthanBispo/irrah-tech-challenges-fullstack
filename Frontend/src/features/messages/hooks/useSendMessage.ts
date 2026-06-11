@@ -30,8 +30,15 @@ export function useSendMessage(options: UseSendMessageOptions) {
     },
     onSuccess: async (data) => {
       toast.success('Mensagem enviada!');
-      if (client && data.currentBalance !== undefined) {
-        updateClient({ ...client, balance: data.currentBalance });
+      if (client) {
+        if (data.currentBalance !== undefined) {
+          updateClient({ ...client, balance: data.currentBalance });
+        } else if (client.planType === 'postpaid') {
+          updateClient({
+            ...client,
+            monthlyUsage: (client.monthlyUsage ?? 0) + data.cost,
+          });
+        }
       }
 
       await queryClient.invalidateQueries({ queryKey: ['conversations'] });

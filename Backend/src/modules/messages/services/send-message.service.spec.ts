@@ -214,6 +214,134 @@ describe('SendMessageService', () => {
     expect(messageQueue.enqueue).toHaveBeenCalledWith('msg-1', MessagePriority.normal);
   });
 
+  it('registra transação postpaid_charge ao enviar mensagem pós-pago', async () => {
+    const postpaidClient = {
+      ...prepaidClient,
+      planType: PlanType.postpaid,
+      balance: 0,
+      limit: 10000,
+      monthlyUsage: 4000,
+    };
+
+    messagesRepository.runTransaction.mockImplementation(async (callback) =>
+      callback({}),
+    );
+    messagesRepository.findClientOrThrow.mockResolvedValue(postpaidClient);
+    messagesRepository.findConversationByIdAndClientId.mockResolvedValue(conversation);
+    messagesRepository.incrementPostpaidUsage.mockResolvedValue({
+      ...postpaidClient,
+      monthlyUsage: 4025,
+    });
+    messagesRepository.createMessage.mockResolvedValue(createdMessage);
+    messagesRepository.touchConversation.mockResolvedValue(conversation);
+
+    await service.execute(postpaidClient, {
+      conversationId: 'conv-1',
+      content: 'Olá',
+      priority: MessagePriority.normal,
+    });
+
+    expect(recordTransaction.executeWithTx).toHaveBeenCalledWith(
+      expect.anything(),
+      expect.objectContaining({
+        clientId: 'client-1',
+        type: TransactionType.postpaid_charge,
+        amount: 25,
+        messageId: 'msg-1',
+      }),
+    );
+  });
+
+  it('não inclui balanceAfter na transação pós-pago', async () => {
+    const postpaidClient = {
+      ...prepaidClient,
+      planType: PlanType.postpaid,
+      balance: 0,
+      limit: 10000,
+      monthlyUsage: 4000,
+    };
+
+    messagesRepository.runTransaction.mockImplementation(async (callback) =>
+      callback({}),
+    );
+    messagesRepository.findClientOrThrow.mockResolvedValue(postpaidClient);
+    messagesRepository.findConversationByIdAndClientId.mockResolvedValue(conversation);
+    messagesRepository.incrementPostpaidUsage.mockResolvedValue({
+      ...postpaidClient,
+      monthlyUsage: 4025,
+    });
+    messagesRepository.createMessage.mockResolvedValue(createdMessage);
+    messagesRepository.touchConversation.mockResolvedValue(conversation);
+
+    await service.execute(postpaidClient, {
+      conversationId: 'conv-1',
+      content: 'Olá',
+      priority: MessagePriority.normal,
+    });
+
+    expect(recordTransaction.executeWithTx).toHaveBeenCalledWith(
+      expect.anything(),
+      expect.objectContaining({ balanceAfter: undefined }),
+    );
+  });
+
+  it('rejeita envio pós-pago urgente quando monthlyUsage + 50 excede limite', async () => {
+    const postpaidClient = {
+      ...prepaidClient,
+      planType: PlanType.postpaid,
+      balance: 0,
+      limit: 10000,
+      monthlyUsage: 9960,
+    };
+
+    messagesRepository.runTransaction.mockImplementation(async (callback) =>
+      callback({}),
+    );
+    messagesRepository.findClientOrThrow.mockResolvedValue(postpaidClient);
+
+    await expect(
+      service.execute(postpaidClient, {
+        conversationId: 'conv-1',
+        content: 'Urgente cara',
+        priority: MessagePriority.urgent,
+      }),
+    ).rejects.toMatchObject({ status: HttpStatus.PAYMENT_REQUIRED });
+  });
+
+  it('aceita envio pós-pago urgente quando monthlyUsage + 50 === limit', async () => {
+    const postpaidClient = {
+      ...prepaidClient,
+      planType: PlanType.postpaid,
+      balance: 0,
+      limit: 10000,
+      monthlyUsage: 9950,
+    };
+
+    messagesRepository.runTransaction.mockImplementation(async (callback) =>
+      callback({}),
+    );
+    messagesRepository.findClientOrThrow.mockResolvedValue(postpaidClient);
+    messagesRepository.findConversationByIdAndClientId.mockResolvedValue(conversation);
+    messagesRepository.incrementPostpaidUsage.mockResolvedValue({
+      ...postpaidClient,
+      monthlyUsage: 10000,
+    });
+    messagesRepository.createMessage.mockResolvedValue({
+      ...createdMessage,
+      priority: MessagePriority.urgent,
+      cost: 50,
+    });
+    messagesRepository.touchConversation.mockResolvedValue(conversation);
+
+    await expect(
+      service.execute(postpaidClient, {
+        conversationId: 'conv-1',
+        content: 'Exatamente no limite',
+        priority: MessagePriority.urgent,
+      }),
+    ).resolves.toMatchObject({ status: 'queued', cost: 50 });
+  });
+
   it('permite envio pós-pago dentro do limite mensal restante', async () => {
     const postpaidClient = {
       ...prepaidClient,

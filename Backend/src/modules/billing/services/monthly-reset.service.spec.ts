@@ -25,4 +25,10 @@ describe('MonthlyResetService', () => {
       data: { monthlyUsage: 0 },
     });
   });
+
+  it('não lança erro quando não há clientes pós-pago', async () => {
+    prisma.client.updateMany.mockResolvedValue({ count: 0 });
+
+    await expect(service.resetMonthlyUsage()).resolves.not.toThrow();
+  });
 });

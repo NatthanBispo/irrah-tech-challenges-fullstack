@@ -49,7 +49,6 @@ async function fillRegisterForm(
   options: {
     name: string;
     document: string;
-    documentPlaceholder?: string;
   },
 ) {
   await user.type(
@@ -57,7 +56,7 @@ async function fillRegisterForm(
     options.name,
   );
   await user.type(
-    screen.getByPlaceholderText(options.documentPlaceholder ?? '000.000.000-00'),
+    screen.getByPlaceholderText('000.000.000-00'),
     options.document,
   );
 }
@@ -112,7 +111,7 @@ describe('RegisterForm', () => {
     expect(localStorage.getItem(TOKEN_KEY)).toBe('client-id');
   });
 
-  it('cadastra cliente pós-pago com plano selecionado', async () => {
+  it('cadastra cliente pós-pago com CNPJ detectado automaticamente', async () => {
     vi.mocked(authService.register).mockResolvedValue({
       token: 'client-id-2',
       client: mockPostpaidClient,
@@ -124,11 +123,9 @@ describe('RegisterForm', () => {
       routerProps: { initialEntries: ['/'] },
     });
 
-    await user.click(screen.getByRole('radio', { name: /PJ \(CNPJ\)/ }));
     await fillRegisterForm(user, {
       name: 'Tech Solutions',
       document: VALID_CNPJ,
-      documentPlaceholder: '00.000.000/0000-00',
     });
     await user.click(screen.getByRole('radio', { name: /Pós-pago/ }));
     await user.click(screen.getByRole('button', { name: 'Cadastrar' }));

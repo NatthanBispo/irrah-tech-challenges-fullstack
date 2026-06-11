@@ -66,6 +66,7 @@ describe('ConvertPlanService', () => {
 
     expect(result.planType).toBe(PlanType.postpaid);
     expect(result.limit).toBe(10000);
+    expect(result.available).toBe(10000);
   });
 
   it('registra transação de crédito ao converter pré→pós com saldo', async () => {
@@ -129,5 +130,36 @@ describe('ConvertPlanService', () => {
     await expect(
       service.execute(prepaidClient as never, { planType: PlanType.prepaid }),
     ).rejects.toThrow(BadRequestException);
+  });
+
+  it('não registra transação ao converter pré→pós com saldo zero', async () => {
+    const prepaidZero = { ...prepaidClient, balance: 0 };
+    billingRepository.findClientById.mockResolvedValue(prepaidZero);
+    billingRepository.convertToPostpaid.mockResolvedValue({
+      ...prepaidZero,
+      planType: PlanType.postpaid,
+      limit: 10000,
+      monthlyUsage: 0,
+    });
+
+    await service.execute(prepaidZero as never, { planType: PlanType.postpaid });
+
+    expect(recordTransaction.executeWithTx).not.toHaveBeenCalled();
+  });
+
+  it('não registra transação ao converter pós→pré com consumo zero', async () => {
+    const postpaidZeroUsage = { ...postpaidClient, monthlyUsage: 0 };
+    billingRepository.findClientById.mockResolvedValue(postpaidZeroUsage);
+    billingRepository.convertToPrepaid.mockResolvedValue({
+      ...postpaidZeroUsage,
+      planType: PlanType.prepaid,
+      balance: 0,
+      limit: 0,
+      monthlyUsage: 0,
+    });
+
+    await service.execute(postpaidZeroUsage as never, { planType: PlanType.prepaid });
+
+    expect(recordTransaction.executeWithTx).not.toHaveBeenCalled();
   });
 });

@@ -61,4 +61,17 @@ describe('UpdateLimitService', () => {
       service.execute(postpaidClient as never, { limit: 1000 }),
     ).rejects.toThrow(BadRequestException);
   });
+
+  it('aceita limite exatamente igual ao consumo atual', async () => {
+    billingRepository.findClientById.mockResolvedValue(postpaidClient);
+    billingRepository.updateLimit.mockResolvedValue({
+      ...postpaidClient,
+      limit: 3000,
+    });
+
+    const result = await service.execute(postpaidClient as never, { limit: 3000 });
+
+    expect(billingRepository.updateLimit).toHaveBeenCalledWith('client-1', 3000);
+    expect(result).toEqual({ limit: 3000 });
+  });
 });

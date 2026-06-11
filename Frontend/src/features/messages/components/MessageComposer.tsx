@@ -104,12 +104,18 @@ export function MessageComposer({
         </label>
       </div>
 
-      <div className="flex gap-2">
+      <div className="flex items-center gap-2">
         <textarea
           value={content}
           onChange={(e) => {
             setContent(e.target.value);
             setError(null);
+          }}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter' && !e.shiftKey) {
+              e.preventDefault();
+              e.currentTarget.form?.requestSubmit();
+            }
           }}
           placeholder={t('chat.messagePlaceholder')}
           rows={2}
@@ -118,10 +124,20 @@ export function MessageComposer({
         />
         <button
           type="submit"
-          disabled={isPending}
-          className="self-end rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-blue-700 disabled:opacity-60"
+          disabled={isPending || !content.trim()}
+          aria-label={t('chat.send')}
+          className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-blue-600 text-white shadow-sm transition hover:bg-blue-700 disabled:opacity-40"
         >
-          {isPending ? t('chat.sending') : t('chat.send')}
+          {isPending ? (
+            <svg className="h-4 w-4 animate-spin" viewBox="0 0 24 24" fill="none">
+              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z" />
+            </svg>
+          ) : (
+            <svg className="h-5 w-5 translate-x-px" viewBox="0 0 24 24" fill="currentColor">
+              <path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z" />
+            </svg>
+          )}
         </button>
       </div>
 
