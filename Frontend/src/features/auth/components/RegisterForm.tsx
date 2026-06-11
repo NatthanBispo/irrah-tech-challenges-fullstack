@@ -9,16 +9,12 @@ import {
 import { isValidDocument } from '../../../shared/utils/document-validation';
 import { useRegister } from '../hooks/useRegister';
 
-const MIN_PASSWORD_LENGTH = 8;
-
 export function RegisterForm() {
   const { t } = useTranslation();
   const [name, setName] = useState('');
   const [documentId, setDocumentId] = useState('');
   const [documentType, setDocumentType] = useState<DocumentType>('CPF');
   const [planType, setPlanType] = useState<PlanType>('prepaid');
-  const [password, setPassword] = useState('');
-  const [confirmPassword, setConfirmPassword] = useState('');
   const [validationError, setValidationError] = useState<string | null>(null);
   const { mutate, isPending, isError, error } = useRegister();
 
@@ -51,28 +47,12 @@ export function RegisterForm() {
           return;
         }
 
-        if (!password.trim()) {
-          setValidationError(t('register.passwordRequired'));
-          return;
-        }
-
-        if (password.length < MIN_PASSWORD_LENGTH) {
-          setValidationError(t('register.passwordMinLength'));
-          return;
-        }
-
-        if (password !== confirmPassword) {
-          setValidationError(t('register.passwordMismatch'));
-          return;
-        }
-
         setValidationError(null);
         mutate({
           name,
           documentId: stripped,
           documentType,
           planType,
-          password,
         });
       }}
     >
@@ -141,44 +121,6 @@ export function RegisterForm() {
             {t('auth.cnpj')}
           </label>
         </div>
-      </div>
-
-      <div>
-        <label className="mb-1 block text-sm font-medium text-slate-700">
-          {t('register.passwordLabel')}
-        </label>
-        <input
-          type="password"
-          value={password}
-          onChange={(e) => {
-            setPassword(e.target.value);
-            setValidationError(null);
-          }}
-          placeholder={t('register.passwordPlaceholder')}
-          autoComplete="new-password"
-          required
-          disabled={isPending}
-          className="w-full rounded-lg border border-slate-300 px-4 py-3 text-sm outline-none transition focus:border-blue-500 focus:ring-1 focus:ring-blue-500 disabled:opacity-60"
-        />
-      </div>
-
-      <div>
-        <label className="mb-1 block text-sm font-medium text-slate-700">
-          {t('register.confirmPasswordLabel')}
-        </label>
-        <input
-          type="password"
-          value={confirmPassword}
-          onChange={(e) => {
-            setConfirmPassword(e.target.value);
-            setValidationError(null);
-          }}
-          placeholder={t('register.confirmPasswordPlaceholder')}
-          autoComplete="new-password"
-          required
-          disabled={isPending}
-          className="w-full rounded-lg border border-slate-300 px-4 py-3 text-sm outline-none transition focus:border-blue-500 focus:ring-1 focus:ring-blue-500 disabled:opacity-60"
-        />
       </div>
 
       <div>

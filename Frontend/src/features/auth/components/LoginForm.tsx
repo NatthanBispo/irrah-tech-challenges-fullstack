@@ -12,7 +12,6 @@ import { useLogin } from '../hooks/useLogin';
 export function LoginForm() {
   const { t } = useTranslation();
   const [documentId, setDocumentId] = useState('');
-  const [password, setPassword] = useState('');
   const [validationError, setValidationError] = useState<string | null>(null);
   const { mutate, isPending, isError } = useLogin();
 
@@ -42,13 +41,8 @@ export function LoginForm() {
           return;
         }
 
-        if (!password.trim()) {
-          setValidationError(t('auth.passwordRequired'));
-          return;
-        }
-
         setValidationError(null);
-        mutate({ documentId: stripped, documentType, password });
+        mutate({ documentId: stripped, documentType });
       }}
     >
       <div>
@@ -69,25 +63,6 @@ export function LoginForm() {
               : t('auth.documentPlaceholderCpf')
           }
           maxLength={18}
-          required
-          disabled={isPending}
-          className="w-full rounded-lg border border-slate-300 px-4 py-3 text-sm outline-none transition focus:border-blue-500 focus:ring-1 focus:ring-blue-500 disabled:opacity-60"
-        />
-      </div>
-
-      <div>
-        <label className="mb-1 block text-sm font-medium text-slate-700">
-          {t('auth.passwordLabel')}
-        </label>
-        <input
-          type="password"
-          value={password}
-          onChange={(e) => {
-            setPassword(e.target.value);
-            setValidationError(null);
-          }}
-          placeholder={t('auth.passwordPlaceholder')}
-          autoComplete="current-password"
           required
           disabled={isPending}
           className="w-full rounded-lg border border-slate-300 px-4 py-3 text-sm outline-none transition focus:border-blue-500 focus:ring-1 focus:ring-blue-500 disabled:opacity-60"

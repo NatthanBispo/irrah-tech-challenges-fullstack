@@ -21,6 +21,11 @@ export interface Client {
   active: boolean;
 }
 
+export interface AuthRequest {
+  documentId: string;
+  documentType: DocumentType;
+}
+
 export interface AuthResponse {
   token: string;
   client: Client;
@@ -31,19 +36,21 @@ export interface RegisterPayload {
   documentId: string;
   documentType: DocumentType;
   planType: PlanType;
-  password: string;
 }
 
-export interface Conversation {
+export interface ConversationResponse {
   id: string;
   recipientId: string;
   recipientName: string;
   lastMessageContent: string;
-  lastMessageTime: string | null;
+  lastMessageTime: string;
   unreadCount: number;
 }
 
-export interface Message {
+/** @deprecated Use ConversationResponse */
+export type Conversation = ConversationResponse;
+
+export interface MessageResponse {
   id: string;
   conversationId: string;
   content: string;
@@ -57,8 +64,11 @@ export interface Message {
   cost: number;
 }
 
+/** @deprecated Use MessageResponse */
+export type Message = MessageResponse;
+
 export interface SendMessageRequest {
-  conversationId?: string;
+  conversationId: string;
   recipientId?: string;
   content: string;
   priority: MessagePriority;
@@ -66,7 +76,7 @@ export interface SendMessageRequest {
 
 export interface SendMessageResponse {
   id: string;
-  status: MessageStatus;
+  status: 'queued';
   timestamp: string;
   estimatedDelivery: string;
   cost: number;

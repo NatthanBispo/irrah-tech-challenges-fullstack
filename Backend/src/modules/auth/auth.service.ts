@@ -3,7 +3,6 @@ import {
   Injectable,
   UnauthorizedException,
 } from '@nestjs/common';
-import * as bcrypt from 'bcrypt';
 import { I18nService } from 'nestjs-i18n';
 import { PrismaService } from '../../shared/database/prisma.service';
 import { PlanType } from '../../shared/utils/enums';
@@ -12,7 +11,6 @@ import { AuthRequestDto } from './dto/auth-request.dto';
 import { RegisterRequestDto } from './dto/register-request.dto';
 
 const DEFAULT_POSTPAID_LIMIT = 100;
-const BCRYPT_SALT_ROUNDS = 10;
 
 @Injectable()
 export class AuthService {
@@ -35,17 +33,6 @@ export class AuthService {
       );
     }
 
-    const passwordMatches = await bcrypt.compare(
-      dto.password,
-      client.passwordHash,
-    );
-
-    if (!passwordMatches) {
-      throw new UnauthorizedException(
-        this.i18n.t('auth.INVALID_CREDENTIALS'),
-      );
-    }
-
     return this.buildAuthResponse(client);
   }
 
@@ -60,14 +47,11 @@ export class AuthService {
       );
     }
 
-    const passwordHash = await bcrypt.hash(dto.password, BCRYPT_SALT_ROUNDS);
-
     const client = await this.prisma.client.create({
       data: {
         name: dto.name,
         documentId: dto.documentId,
         documentType: dto.documentType,
-        passwordHash,
         planType: dto.planType,
         balance: 0,
         limit: dto.planType === PlanType.postpaid ? DEFAULT_POSTPAID_LIMIT : 0,

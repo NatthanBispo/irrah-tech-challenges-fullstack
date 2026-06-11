@@ -11,7 +11,6 @@ vi.mock('../services/auth.service');
 
 const VALID_CPF = '39053344705';
 const VALID_CNPJ = '11222333000181';
-const PASSWORD = 'Senha1234';
 
 const mockClient = {
   id: 'client-id',
@@ -37,10 +36,8 @@ function LoginRoutes() {
 async function fillLoginForm(
   user: ReturnType<typeof userEvent.setup>,
   document: string,
-  password = PASSWORD,
 ) {
   await user.type(screen.getByPlaceholderText('000.000.000-00'), document);
-  await user.type(screen.getByPlaceholderText('Digite sua senha'), password);
 }
 
 describe('LoginForm', () => {
@@ -96,7 +93,6 @@ describe('LoginForm', () => {
     expect(authService.login).toHaveBeenCalledWith({
       documentId: VALID_CPF,
       documentType: 'CPF',
-      password: PASSWORD,
     });
     expect(localStorage.getItem(TOKEN_KEY)).toBe('client-id');
     expect(JSON.parse(localStorage.getItem(CLIENT_KEY)!)).toEqual(mockClient);
@@ -126,7 +122,6 @@ describe('LoginForm', () => {
       expect(authService.login).toHaveBeenCalledWith({
         documentId: VALID_CNPJ,
         documentType: 'CNPJ',
-        password: PASSWORD,
       });
     });
   });
@@ -165,22 +160,6 @@ describe('LoginForm', () => {
     expect(authService.login).not.toHaveBeenCalled();
   });
 
-  it('exibe erro quando senha não é informada', async () => {
-    const user = userEvent.setup();
-
-    renderWithProviders(<LoginForm />, {
-      routerProps: { initialEntries: ['/'] },
-    });
-
-    await user.type(screen.getByPlaceholderText('000.000.000-00'), VALID_CPF);
-    await user.click(screen.getByRole('button', { name: 'Entrar' }));
-
-    expect(
-      await screen.findByText('Informe sua senha.'),
-    ).toBeInTheDocument();
-    expect(authService.login).not.toHaveBeenCalled();
-  });
-
   it('exibe erro quando autenticação falha', async () => {
     vi.mocked(authService.login).mockRejectedValue(new Error('not found'));
 
@@ -194,7 +173,7 @@ describe('LoginForm', () => {
     await user.click(screen.getByRole('button', { name: 'Entrar' }));
 
     expect(
-      await screen.findByText('Documento ou senha incorretos.'),
+      await screen.findByText('Documento não encontrado ou cliente inativo.'),
     ).toBeInTheDocument();
   });
 });

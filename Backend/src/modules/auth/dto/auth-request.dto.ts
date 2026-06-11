@@ -16,9 +16,4 @@ export class AuthRequestDto {
     message: i18nValidationMessage('validation.DOCUMENT_TYPE_ENUM'),
   })
   documentType: DocumentType;
-
-  @ApiProperty({ example: 'Senha1234' })
-  @IsString({ message: i18nValidationMessage('validation.PASSWORD_STRING') })
-  @IsNotEmpty({ message: i18nValidationMessage('validation.PASSWORD_REQUIRED') })
-  password: string;
 }

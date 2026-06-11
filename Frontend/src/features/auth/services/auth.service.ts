@@ -1,17 +1,13 @@
 import type {
+  AuthRequest,
   AuthResponse,
-  DocumentType,
   RegisterPayload,
 } from '../../../shared/types';
 import { api } from '../../../shared/services/api';
 
-export interface LoginPayload {
-  documentId: string;
-  documentType: DocumentType;
-  password: string;
-}
+export type LoginPayload = AuthRequest;
 
-export async function login(payload: LoginPayload): Promise<AuthResponse> {
+export async function login(payload: AuthRequest): Promise<AuthResponse> {
   const { data } = await api.post<AuthResponse>('/auth', payload);
   return data;
 }
