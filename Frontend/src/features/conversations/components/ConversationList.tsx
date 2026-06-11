@@ -1,4 +1,6 @@
+import { useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
+import { toast } from 'sonner';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useConversations } from '../hooks/useConversations';
 import { ConversationItem } from './ConversationItem';
@@ -8,6 +10,12 @@ export function ConversationList() {
   const navigate = useNavigate();
   const { conversationId } = useParams();
   const { data, isLoading, isError } = useConversations();
+
+  useEffect(() => {
+    if (isError) {
+      toast.error(t('chat.errorConversations'));
+    }
+  }, [isError, t]);
 
   if (isLoading) {
     return (
@@ -20,7 +28,7 @@ export function ConversationList() {
   if (isError) {
     return (
       <div className="flex flex-1 items-center justify-center p-8">
-        <p className="text-sm text-red-600">{t('chat.errorConversations')}</p>
+        <p className="text-sm text-slate-500">{t('chat.emptyConversations')}</p>
       </div>
     );
   }

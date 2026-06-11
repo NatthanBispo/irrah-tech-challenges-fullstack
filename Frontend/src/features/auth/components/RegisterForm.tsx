@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Link } from 'react-router-dom';
+import { toast } from 'sonner';
 import type { PlanType } from '../../../shared/types';
 import {
   detectDocumentType,
@@ -15,18 +16,10 @@ export function RegisterForm() {
   const [name, setName] = useState('');
   const [documentId, setDocumentId] = useState('');
   const [planType, setPlanType] = useState<PlanType>('prepaid');
-  const [validationError, setValidationError] = useState<string | null>(null);
-  const { mutate, isPending, isError, error } = useRegister();
+  const { mutate, isPending } = useRegister();
 
   const stripped = stripDocument(documentId);
   const detectedType = detectDocumentType(stripped);
-
-  const isConflict =
-    isError &&
-    typeof error === 'object' &&
-    error !== null &&
-    'response' in error &&
-    (error as { response?: { status?: number } }).response?.status === 409;
 
   return (
     <form
@@ -36,12 +29,12 @@ export function RegisterForm() {
         event.preventDefault();
 
         if (!detectedType) {
-          setValidationError(t('auth.invalidDocumentLength'));
+          toast.error(t('auth.invalidDocumentLength'));
           return;
         }
 
         if (!isValidDocument(stripped, detectedType)) {
-          setValidationError(
+          toast.error(
             detectedType === 'CNPJ'
               ? t('auth.invalidCnpj')
               : t('auth.invalidCpf'),
@@ -49,7 +42,6 @@ export function RegisterForm() {
           return;
         }
 
-        setValidationError(null);
         mutate({
           name,
           documentId: stripped,
@@ -86,10 +78,7 @@ export function RegisterForm() {
           type="text"
           inputMode="numeric"
           value={documentId}
-          onChange={(e) => {
-            setDocumentId(formatDocumentAuto(e.target.value));
-            setValidationError(null);
-          }}
+          onChange={(e) => setDocumentId(formatDocumentAuto(e.target.value))}
           placeholder={t('auth.documentPlaceholderCpf')}
           maxLength={18}
           required
@@ -141,18 +130,6 @@ export function RegisterForm() {
           </label>
         </div>
       </div>
-
-      {validationError && (
-        <p className="rounded-lg bg-red-50 px-4 py-3 text-sm text-red-600">
-          {validationError}
-        </p>
-      )}
-
-      {isError && (
-        <p className="rounded-lg bg-red-50 px-4 py-3 text-sm text-red-600">
-          {isConflict ? t('register.conflictError') : t('register.genericError')}
-        </p>
-      )}
 
       <button
         type="submit"

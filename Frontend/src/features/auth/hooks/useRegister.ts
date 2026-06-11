@@ -16,7 +16,18 @@ export function useRegister() {
       saveSession(data.token, data.client);
       navigate('/dashboard');
     },
-    onError: () => {
+    onError: (error) => {
+      const status =
+        typeof error === 'object' &&
+        error !== null &&
+        'response' in error &&
+        (error as { response?: { status?: number } }).response?.status;
+
+      if (status === 409) {
+        toast.error('Este documento já está cadastrado.');
+        return;
+      }
+
       toast.error('Não foi possível concluir o cadastro. Tente novamente.');
     },
   });

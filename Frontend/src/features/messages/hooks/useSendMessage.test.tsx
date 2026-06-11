@@ -193,6 +193,73 @@ describe('useSendMessage', () => {
     });
   });
 
+  it('exibe toast de limite excedido para cliente pós-pago com 402', async () => {
+    const { toast } = await import('sonner');
+
+    vi.mocked(authContext.useAuth).mockReturnValue({
+      client: postpaidClient,
+      token: 'token',
+      isAuthenticated: true,
+      saveSession: vi.fn(),
+      updateClient,
+      logout: vi.fn(),
+    });
+    vi.mocked(messagesService.sendMessage).mockRejectedValue({
+      response: { status: 402 },
+    });
+
+    const { result } = renderHook(
+      () => useSendMessage({ conversationId: 'conv-1' }),
+      { wrapper: createWrapper() },
+    );
+
+    result.current.mutate({ content: 'Mensagem cara', priority: 'normal' });
+
+    await waitFor(() => {
+      expect(toast.error).toHaveBeenCalledWith(
+        'Limite mensal excedido para enviar esta mensagem.',
+      );
+    });
+  });
+
+  it('exibe toast de saldo insuficiente para cliente pré-pago com 402', async () => {
+    const { toast } = await import('sonner');
+
+    vi.mocked(messagesService.sendMessage).mockRejectedValue({
+      response: { status: 402 },
+    });
+
+    const { result } = renderHook(
+      () => useSendMessage({ conversationId: 'conv-1' }),
+      { wrapper: createWrapper() },
+    );
+
+    result.current.mutate({ content: 'Sem saldo', priority: 'normal' });
+
+    await waitFor(() => {
+      expect(toast.error).toHaveBeenCalledWith(
+        'Saldo insuficiente para enviar esta mensagem.',
+      );
+    });
+  });
+
+  it('exibe toast genérico quando envio falha', async () => {
+    const { toast } = await import('sonner');
+
+    vi.mocked(messagesService.sendMessage).mockRejectedValue(new Error('fail'));
+
+    const { result } = renderHook(
+      () => useSendMessage({ conversationId: 'conv-1' }),
+      { wrapper: createWrapper() },
+    );
+
+    result.current.mutate({ content: 'Erro', priority: 'normal' });
+
+    await waitFor(() => {
+      expect(toast.error).toHaveBeenCalledWith('Não foi possível enviar a mensagem.');
+    });
+  });
+
   it('navega para conversa criada ao enviar para novo destinatário', async () => {
     vi.mocked(messagesService.sendMessage).mockResolvedValue({
       id: 'msg-3',

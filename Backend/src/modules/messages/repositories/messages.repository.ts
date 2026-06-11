@@ -141,6 +141,7 @@ export class MessagesRepository {
     conversationId: string;
     content: string;
     sentById: string;
+    type: MessageType;
   }) {
     return this.prisma.$transaction([
       this.prisma.message.create({
@@ -152,6 +153,7 @@ export class MessagesRepository {
           cost: 0,
           sentById: data.sentById,
           sentByType: SenderType.user,
+          type: data.type,
         },
       }),
       this.prisma.conversation.update({

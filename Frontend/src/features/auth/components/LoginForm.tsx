@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Link } from 'react-router-dom';
+import { toast } from 'sonner';
 import {
   detectDocumentType,
   formatDocumentAuto,
@@ -12,8 +13,7 @@ import { useLogin } from '../hooks/useLogin';
 export function LoginForm() {
   const { t } = useTranslation();
   const [documentId, setDocumentId] = useState('');
-  const [validationError, setValidationError] = useState<string | null>(null);
-  const { mutate, isPending, isError } = useLogin();
+  const { mutate, isPending } = useLogin();
 
   const digits = stripDocument(documentId);
   const isCnpj = digits.length > 11;
@@ -28,12 +28,12 @@ export function LoginForm() {
         const documentType = detectDocumentType(stripped);
 
         if (!documentType) {
-          setValidationError(t('auth.invalidDocumentLength'));
+          toast.error(t('auth.invalidDocumentLength'));
           return;
         }
 
         if (!isValidDocumentAuto(stripped)) {
-          setValidationError(
+          toast.error(
             documentType === 'CNPJ'
               ? t('auth.invalidCnpj')
               : t('auth.invalidCpf'),
@@ -41,7 +41,6 @@ export function LoginForm() {
           return;
         }
 
-        setValidationError(null);
         mutate({ documentId: stripped, documentType });
       }}
     >
@@ -53,10 +52,7 @@ export function LoginForm() {
           type="text"
           inputMode="numeric"
           value={documentId}
-          onChange={(e) => {
-            setDocumentId(formatDocumentAuto(e.target.value));
-            setValidationError(null);
-          }}
+          onChange={(e) => setDocumentId(formatDocumentAuto(e.target.value))}
           placeholder={
             isCnpj
               ? t('auth.documentPlaceholderCnpj')
@@ -68,18 +64,6 @@ export function LoginForm() {
           className="w-full rounded-lg border border-slate-300 px-4 py-3 text-sm outline-none transition focus:border-blue-500 focus:ring-1 focus:ring-blue-500 disabled:opacity-60"
         />
       </div>
-
-      {validationError && (
-        <p className="rounded-lg bg-red-50 px-4 py-3 text-sm text-red-600">
-          {validationError}
-        </p>
-      )}
-
-      {isError && (
-        <p className="rounded-lg bg-red-50 px-4 py-3 text-sm text-red-600">
-          {t('auth.loginError')}
-        </p>
-      )}
 
       <button
         type="submit"

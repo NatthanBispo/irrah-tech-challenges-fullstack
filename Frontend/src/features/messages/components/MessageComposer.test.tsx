@@ -7,6 +7,12 @@ import * as useSendMessageHook from '../hooks/useSendMessage';
 import * as authContext from '../../auth/context/AuthContext';
 
 vi.mock('../hooks/useSendMessage');
+vi.mock('sonner', () => ({
+  toast: {
+    success: vi.fn(),
+    error: vi.fn(),
+  },
+}));
 vi.mock('../../auth/context/AuthContext', async (importOriginal) => {
   const actual = await importOriginal<typeof authContext>();
   return {
@@ -83,73 +89,39 @@ describe('MessageComposer', () => {
     });
   });
 
-  it('exibe erro quando conteúdo está vazio', async () => {
-    const user = userEvent.setup();
-
+  it('botão de enviar fica desabilitado quando conteúdo está vazio', () => {
     renderWithProviders(<MessageComposer conversationId="conv-1" />);
 
-    await user.click(screen.getByRole('button', { name: 'Enviar' }));
-
-    expect(
-      await screen.findByText('Digite uma mensagem antes de enviar.'),
-    ).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Enviar' })).toBeDisabled();
     expect(mutate).not.toHaveBeenCalled();
   });
 
-  it('exibe erro de limite excedido para cliente pós-pago com 402', async () => {
-    vi.mocked(authContext.useAuth).mockReturnValue({
-      client: {
-        id: 'client-2',
-        name: 'Tech Solutions',
-        documentId: '11222333000181',
-        documentType: 'CNPJ',
-        planType: 'postpaid',
-        limit: 10000,
-        active: true,
-      },
-      token: 'token',
-      isAuthenticated: true,
-      saveSession: vi.fn(),
-      updateClient: vi.fn(),
-      logout: vi.fn(),
-    });
-
-    mutate.mockImplementation((_payload, options) => {
-      options?.onError?.({ response: { status: 402 } });
-    });
-
+  it('botão de enviar fica habilitado ao digitar conteúdo', async () => {
     const user = userEvent.setup();
 
     renderWithProviders(<MessageComposer conversationId="conv-1" />);
 
+    expect(screen.getByRole('button', { name: 'Enviar' })).toBeDisabled();
+
     await user.type(
       screen.getByPlaceholderText('Digite sua mensagem...'),
-      'Mensagem cara',
+      'Olá!',
     );
-    await user.click(screen.getByRole('button', { name: 'Enviar' }));
 
-    expect(
-      await screen.findByText('Limite mensal excedido para enviar esta mensagem.'),
-    ).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Enviar' })).toBeEnabled();
   });
 
-  it('exibe erro de saldo insuficiente para cliente pré-pago com 402', async () => {
-    mutate.mockImplementation((_payload, options) => {
-      options?.onError?.({ response: { status: 402 } });
-    });
-
+  it('exibe toast de conteúdo obrigatório ao submeter formulário vazio via Enter', async () => {
+    const { toast } = await import('sonner');
     const user = userEvent.setup();
 
     renderWithProviders(<MessageComposer conversationId="conv-1" />);
 
-    await user.type(
-      screen.getByPlaceholderText('Digite sua mensagem...'),
-      'Sem saldo',
-    );
-    await user.click(screen.getByRole('button', { name: 'Enviar' }));
+    const textarea = screen.getByPlaceholderText('Digite sua mensagem...');
+    await user.click(textarea);
+    await user.keyboard('{Enter}');
 
-    expect(
-      await screen.findByText('Saldo insuficiente para enviar esta mensagem.'),
-    ).toBeInTheDocument();
+    expect(toast.error).toHaveBeenCalledWith('Digite uma mensagem antes de enviar.');
+    expect(mutate).not.toHaveBeenCalled();
   });
 });

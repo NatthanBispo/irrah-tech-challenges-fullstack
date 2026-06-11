@@ -2,6 +2,7 @@ import { Logger } from '@nestjs/common';
 import {
   MessagePriority,
   MessageStatus,
+  MessageType,
   SenderType,
 } from '@prisma/client';
 import { MessagesRepository } from '../repositories/messages.repository';
@@ -51,6 +52,7 @@ describe('QueueWorkerService', () => {
       status: MessageStatus.processing,
       priority: MessagePriority.normal,
       sentByType: SenderType.client,
+      type: MessageType.whatsapp,
       conversation: {
         id: 'conv-1',
         recipientId: 'rec-1',
@@ -83,6 +85,7 @@ describe('QueueWorkerService', () => {
       status: MessageStatus.queued,
       priority: MessagePriority.normal,
       sentByType: SenderType.user,
+      type: MessageType.sms,
       conversation: {
         id: 'conv-3',
         recipientId: 'rec-3',
@@ -116,6 +119,7 @@ describe('QueueWorkerService', () => {
       status: MessageStatus.queued,
       priority: MessagePriority.normal,
       sentByType: SenderType.client,
+      type: MessageType.whatsapp,
       conversation: {
         id: 'conv-4',
         recipientId: 'rec-4',
@@ -137,13 +141,14 @@ describe('QueueWorkerService', () => {
     expect(messagesRepository.createAutoReply).not.toHaveBeenCalled();
   });
 
-  it('cria resposta automática após entrega de mensagem do client', async () => {
-    messageQueue.dequeue.mockReturnValue('msg-client');
+  it('cria resposta automática via whatsapp quando mensagem do client é whatsapp', async () => {
+    messageQueue.dequeue.mockReturnValue('msg-client-wa');
     messagesRepository.findMessageById.mockResolvedValue({
-      id: 'msg-client',
+      id: 'msg-client-wa',
       status: MessageStatus.queued,
       priority: MessagePriority.urgent,
       sentByType: SenderType.client,
+      type: MessageType.whatsapp,
       conversation: {
         id: 'conv-2',
         recipientId: 'rec-2',
@@ -155,6 +160,32 @@ describe('QueueWorkerService', () => {
     await jest.runAllTimersAsync();
     await promise;
 
-    expect(messagesRepository.createAutoReply).toHaveBeenCalled();
+    expect(messagesRepository.createAutoReply).toHaveBeenCalledWith(
+      expect.objectContaining({ type: MessageType.whatsapp }),
+    );
+  });
+
+  it('cria resposta automática via sms quando mensagem do client é sms', async () => {
+    messageQueue.dequeue.mockReturnValue('msg-client-sms');
+    messagesRepository.findMessageById.mockResolvedValue({
+      id: 'msg-client-sms',
+      status: MessageStatus.queued,
+      priority: MessagePriority.normal,
+      sentByType: SenderType.client,
+      type: MessageType.sms,
+      conversation: {
+        id: 'conv-5',
+        recipientId: 'rec-5',
+        recipient: { name: 'Maria SMS' },
+      },
+    });
+
+    const promise = service.processQueue();
+    await jest.runAllTimersAsync();
+    await promise;
+
+    expect(messagesRepository.createAutoReply).toHaveBeenCalledWith(
+      expect.objectContaining({ type: MessageType.sms }),
+    );
   });
 });

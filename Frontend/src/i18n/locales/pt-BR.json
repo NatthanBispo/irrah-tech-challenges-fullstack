@@ -11,6 +11,7 @@
     "cpf": "PF (CPF)",
     "cnpj": "PJ (CNPJ)",
     "loginError": "Documento não encontrado ou cliente inativo.",
+    "sessionExpired": "Sessão expirada. Faça login novamente.",
     "invalidDocumentLength": "Informe um CPF (11 dígitos) ou CNPJ (14 dígitos).",
     "invalidCpf": "Informe um CPF válido.",
     "invalidCnpj": "Informe um CNPJ válido.",
@@ -101,6 +102,10 @@
     "postpaidUsage": "Consumo: R$ {{usage}} de R$ {{limit}}",
     "messageTypeSms": "SMS",
     "messageTypeWhatsapp": "WhatsApp",
+    "filterAll": "Todas",
+    "filterWhatsapp": "WhatsApp",
+    "filterSms": "SMS",
+    "emptyFilteredMessages": "Nenhuma mensagem deste tipo na conversa.",
     "status": {
       "queued": "Na fila",
       "processing": "Processando",

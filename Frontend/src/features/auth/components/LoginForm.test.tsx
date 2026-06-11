@@ -8,6 +8,12 @@ import { LoginForm } from './LoginForm';
 import * as authService from '../services/auth.service';
 
 vi.mock('../services/auth.service');
+vi.mock('sonner', () => ({
+  toast: {
+    success: vi.fn(),
+    error: vi.fn(),
+  },
+}));
 
 const VALID_CPF = '39053344705';
 const VALID_CNPJ = '11222333000181';
@@ -126,7 +132,8 @@ describe('LoginForm', () => {
     });
   });
 
-  it('exibe erro para documento com quantidade inválida de dígitos', async () => {
+  it('exibe toast para documento com quantidade inválida de dígitos', async () => {
+    const { toast } = await import('sonner');
     const user = userEvent.setup();
 
     renderWithProviders(<LoginForm />, {
@@ -136,15 +143,14 @@ describe('LoginForm', () => {
     await fillLoginForm(user, '123456');
     await user.click(screen.getByRole('button', { name: 'Entrar' }));
 
-    expect(
-      await screen.findByText(
-        'Informe um CPF (11 dígitos) ou CNPJ (14 dígitos).',
-      ),
-    ).toBeInTheDocument();
+    expect(toast.error).toHaveBeenCalledWith(
+      'Informe um CPF (11 dígitos) ou CNPJ (14 dígitos).',
+    );
     expect(authService.login).not.toHaveBeenCalled();
   });
 
-  it('exibe erro para CPF com dígitos verificadores inválidos', async () => {
+  it('exibe toast para CPF com dígitos verificadores inválidos', async () => {
+    const { toast } = await import('sonner');
     const user = userEvent.setup();
 
     renderWithProviders(<LoginForm />, {
@@ -154,13 +160,12 @@ describe('LoginForm', () => {
     await fillLoginForm(user, '12345678901');
     await user.click(screen.getByRole('button', { name: 'Entrar' }));
 
-    expect(
-      await screen.findByText('Informe um CPF válido.'),
-    ).toBeInTheDocument();
+    expect(toast.error).toHaveBeenCalledWith('Informe um CPF válido.');
     expect(authService.login).not.toHaveBeenCalled();
   });
 
-  it('exibe erro quando autenticação falha', async () => {
+  it('exibe toast quando autenticação falha', async () => {
+    const { toast } = await import('sonner');
     vi.mocked(authService.login).mockRejectedValue(new Error('not found'));
 
     const user = userEvent.setup();
@@ -172,8 +177,10 @@ describe('LoginForm', () => {
     await fillLoginForm(user, '52998224725');
     await user.click(screen.getByRole('button', { name: 'Entrar' }));
 
-    expect(
-      await screen.findByText('Documento não encontrado ou cliente inativo.'),
-    ).toBeInTheDocument();
+    await waitFor(() => {
+      expect(toast.error).toHaveBeenCalledWith(
+        'Documento não encontrado ou cliente inativo.',
+      );
+    });
   });
 });

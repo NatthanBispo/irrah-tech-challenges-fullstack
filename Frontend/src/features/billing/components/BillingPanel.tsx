@@ -1,5 +1,6 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { toast } from 'sonner';
 import { formatCents, reaisToCents } from '../../../shared/utils/money';
 import { useAuth } from '../../auth/context/AuthContext';
 import { useConvertPlan } from '../hooks/useConvertPlan';
@@ -17,37 +18,39 @@ export function BillingPanel() {
   const [customAmount, setCustomAmount] = useState('');
   const [newLimitReais, setNewLimitReais] = useState('');
   const [confirmConvert, setConfirmConvert] = useState<'prepaid' | 'postpaid' | null>(null);
-  const [topUpError, setTopUpError] = useState<string | null>(null);
-  const [limitError, setLimitError] = useState<string | null>(null);
 
   const { mutate: topUp, isPending: toppingUp } = useTopUpBalance();
   const { mutate: updateLimit, isPending: updatingLimit } = useUpdateLimit();
   const { mutate: convertPlan, isPending: converting } = useConvertPlan();
-  const { data: transactions, isLoading: loadingTx } = useTransactions();
+  const { data: transactions, isLoading: loadingTx, isError: transactionsError } =
+    useTransactions();
 
   const isPrepaid = client?.planType === 'prepaid';
 
+  useEffect(() => {
+    if (transactionsError) {
+      toast.error('Não foi possível carregar o histórico de transações.');
+    }
+  }, [transactionsError]);
+
   function handleTopUp(reais: number) {
     if (reais <= 0) {
-      setTopUpError(t('billing.invalidAmount'));
+      toast.error(t('billing.invalidAmount'));
       return;
     }
-    setTopUpError(null);
     topUp(reaisToCents(reais), {
       onSuccess: () => {
         setCustomAmount('');
       },
-      onError: () => setTopUpError(t('billing.topUpError')),
     });
   }
 
   function handleLimitUpdate() {
     const reais = Number(newLimitReais);
     if (reais <= 0) {
-      setLimitError(t('billing.invalidAmount'));
+      toast.error(t('billing.invalidAmount'));
       return;
     }
-    setLimitError(null);
     updateLimit(reaisToCents(reais), {
       onSuccess: () => setNewLimitReais(''),
     });
@@ -130,10 +133,7 @@ export function BillingPanel() {
                       min="0.01"
                       step="0.01"
                       value={customAmount}
-                      onChange={(e) => {
-                        setCustomAmount(e.target.value);
-                        setTopUpError(null);
-                      }}
+                      onChange={(e) => setCustomAmount(e.target.value)}
                       placeholder={t('billing.customAmountPlaceholder')}
                       disabled={toppingUp}
                       className="flex-1 rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 disabled:opacity-60"
@@ -147,7 +147,6 @@ export function BillingPanel() {
                       {toppingUp ? t('billing.topUpSubmitting') : t('billing.topUpSubmit')}
                     </button>
                   </div>
-                  {topUpError && <p className="text-xs text-red-600">{topUpError}</p>}
                 </div>
               )}
 
@@ -160,10 +159,7 @@ export function BillingPanel() {
                       min="0.01"
                       step="0.01"
                       value={newLimitReais}
-                      onChange={(e) => {
-                        setNewLimitReais(e.target.value);
-                        setLimitError(null);
-                      }}
+                      onChange={(e) => setNewLimitReais(e.target.value)}
                       placeholder="Ex: 200.00"
                       disabled={updatingLimit}
                       className="flex-1 rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 disabled:opacity-60"
@@ -179,7 +175,6 @@ export function BillingPanel() {
                         : t('billing.adjustLimitSubmit')}
                     </button>
                   </div>
-                  {limitError && <p className="text-xs text-red-600">{limitError}</p>}
                 </div>
               )}
 

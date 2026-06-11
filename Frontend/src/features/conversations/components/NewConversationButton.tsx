@@ -1,5 +1,6 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { toast } from 'sonner';
 import { useNavigate } from 'react-router-dom';
 import { useRecipients } from '../../recipients/hooks/useRecipients';
 
@@ -8,6 +9,12 @@ export function NewConversationButton() {
   const navigate = useNavigate();
   const [open, setOpen] = useState(false);
   const { data: recipients, isLoading, isError } = useRecipients();
+
+  useEffect(() => {
+    if (isError) {
+      toast.error(t('chat.errorRecipients'));
+    }
+  }, [isError, t]);
 
   return (
     <div className="border-b border-slate-200 px-4 py-2">
@@ -24,10 +31,7 @@ export function NewConversationButton() {
           {isLoading && (
             <p className="p-3 text-sm text-slate-500">{t('chat.loadingRecipients')}</p>
           )}
-          {isError && (
-            <p className="p-3 text-sm text-red-600">{t('chat.errorRecipients')}</p>
-          )}
-          {recipients?.map((recipient) => (
+          {!isLoading && !isError && recipients?.map((recipient) => (
             <button
               key={recipient.id}
               type="button"

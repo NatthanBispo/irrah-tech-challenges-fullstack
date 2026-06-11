@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { toast } from 'sonner';
 import type { MessagePriority, MessageType } from '../../../shared/types';
-import { useAuth } from '../../auth/context/AuthContext';
 import { useSendMessage } from '../hooks/useSendMessage';
 
 interface MessageComposerProps {
@@ -14,11 +14,9 @@ export function MessageComposer({
   recipientId,
 }: MessageComposerProps) {
   const { t } = useTranslation();
-  const { client } = useAuth();
   const [content, setContent] = useState('');
   const [priority, setPriority] = useState<MessagePriority>('normal');
   const [messageType, setMessageType] = useState<MessageType>('whatsapp');
-  const [error, setError] = useState<string | null>(null);
   const { mutate, isPending } = useSendMessage({ conversationId, recipientId });
 
   return (
@@ -29,34 +27,13 @@ export function MessageComposer({
         const trimmed = content.trim();
 
         if (!trimmed) {
-          setError(t('chat.contentRequired'));
+          toast.error(t('chat.contentRequired'));
           return;
         }
 
-        setError(null);
         mutate(
           { content: trimmed, priority, type: messageType },
-          {
-            onSuccess: () => setContent(''),
-            onError: (err: unknown) => {
-              const status =
-                typeof err === 'object' &&
-                err !== null &&
-                'response' in err &&
-                (err as { response?: { status?: number } }).response?.status;
-
-              if (status === 402) {
-                setError(
-                  client?.planType === 'postpaid'
-                    ? t('chat.limitExceeded')
-                    : t('chat.insufficientBalance'),
-                );
-                return;
-              }
-
-              setError(t('chat.sendError'));
-            },
-          },
+          { onSuccess: () => setContent('') },
         );
       }}
     >
@@ -107,10 +84,7 @@ export function MessageComposer({
       <div className="flex items-center gap-2">
         <textarea
           value={content}
-          onChange={(e) => {
-            setContent(e.target.value);
-            setError(null);
-          }}
+          onChange={(e) => setContent(e.target.value)}
           onKeyDown={(e) => {
             if (e.key === 'Enter' && !e.shiftKey) {
               e.preventDefault();
@@ -140,10 +114,6 @@ export function MessageComposer({
           )}
         </button>
       </div>
-
-      {error && (
-        <p className="mt-2 text-sm text-red-600">{error}</p>
-      )}
     </form>
   );
 }

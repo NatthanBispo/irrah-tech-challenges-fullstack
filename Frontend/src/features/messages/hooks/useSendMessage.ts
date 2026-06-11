@@ -28,6 +28,24 @@ export function useSendMessage(options: UseSendMessageOptions) {
 
       throw new Error('conversationId ou recipientId é obrigatório');
     },
+    onError: (err: unknown) => {
+      const status =
+        typeof err === 'object' &&
+        err !== null &&
+        'response' in err &&
+        (err as { response?: { status?: number } }).response?.status;
+
+      if (status === 402) {
+        toast.error(
+          client?.planType === 'postpaid'
+            ? 'Limite mensal excedido para enviar esta mensagem.'
+            : 'Saldo insuficiente para enviar esta mensagem.',
+        );
+        return;
+      }
+
+      toast.error('Não foi possível enviar a mensagem.');
+    },
     onSuccess: async (data) => {
       toast.success('Mensagem enviada!');
       if (client) {

@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { toast } from 'sonner';
 import { reaisToCents } from '../../../shared/utils/money';
 import { useTopUpBalance } from '../hooks/useTopUpBalance';
 
@@ -9,23 +10,18 @@ export function TopUpBalanceButton() {
   const { t } = useTranslation();
   const [open, setOpen] = useState(false);
   const [customAmount, setCustomAmount] = useState('');
-  const [error, setError] = useState<string | null>(null);
   const { mutate, isPending } = useTopUpBalance();
 
   function handleTopUp(reais: number) {
     if (reais <= 0) {
-      setError(t('billing.invalidAmount'));
+      toast.error(t('billing.invalidAmount'));
       return;
     }
 
-    setError(null);
     mutate(reaisToCents(reais), {
       onSuccess: () => {
         setOpen(false);
         setCustomAmount('');
-      },
-      onError: () => {
-        setError(t('billing.topUpError'));
       },
     });
   }
@@ -62,10 +58,7 @@ export function TopUpBalanceButton() {
               min="0.01"
               step="0.01"
               value={customAmount}
-              onChange={(event) => {
-                setCustomAmount(event.target.value);
-                setError(null);
-              }}
+              onChange={(event) => setCustomAmount(event.target.value)}
               placeholder={t('billing.customAmountPlaceholder')}
               disabled={isPending}
               className="flex-1 rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 disabled:opacity-60"
@@ -79,7 +72,6 @@ export function TopUpBalanceButton() {
               {isPending ? t('billing.topUpSubmitting') : t('billing.topUpSubmit')}
             </button>
           </div>
-          {error && <p className="text-sm text-red-600">{error}</p>}
         </div>
       )}
     </div>

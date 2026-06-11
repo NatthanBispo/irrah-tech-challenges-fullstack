@@ -3,6 +3,7 @@ import { Interval } from '@nestjs/schedule';
 import {
   MessagePriority,
   MessageStatus,
+  MessageType,
   SenderType,
 } from '@prisma/client';
 import { MessagesRepository } from '../repositories/messages.repository';
@@ -77,7 +78,7 @@ export class QueueWorkerService {
         );
 
         if (message.sentByType === SenderType.client) {
-          await this.sendAutoReply(message.conversation);
+          await this.sendAutoReply(message.conversation, message.type);
         }
 
         this.logger.debug(`Mensagem ${messageId} entregue`);
@@ -93,11 +94,14 @@ export class QueueWorkerService {
     }
   }
 
-  private async sendAutoReply(conversation: {
-    id: string;
-    recipientId: string;
-    recipient: { name: string };
-  }) {
+  private async sendAutoReply(
+    conversation: {
+      id: string;
+      recipientId: string;
+      recipient: { name: string };
+    },
+    type: MessageType,
+  ) {
     const replyContent =
       AUTO_REPLY_MESSAGES[
         Math.floor(Math.random() * AUTO_REPLY_MESSAGES.length)
@@ -107,6 +111,7 @@ export class QueueWorkerService {
       conversationId: conversation.id,
       content: replyContent,
       sentById: conversation.recipientId,
+      type,
     });
   }
 

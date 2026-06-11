@@ -8,6 +8,12 @@ import { RegisterForm } from './RegisterForm';
 import * as authService from '../services/auth.service';
 
 vi.mock('../services/auth.service');
+vi.mock('sonner', () => ({
+  toast: {
+    success: vi.fn(),
+    error: vi.fn(),
+  },
+}));
 
 const VALID_CPF = '39053344705';
 const VALID_CNPJ = '11222333000181';
@@ -140,7 +146,8 @@ describe('RegisterForm', () => {
     });
   });
 
-  it('exibe erro para CPF inválido antes de enviar', async () => {
+  it('exibe toast para CPF inválido antes de enviar', async () => {
+    const { toast } = await import('sonner');
     const user = userEvent.setup();
 
     renderWithProviders(<RegisterForm />, {
@@ -153,13 +160,12 @@ describe('RegisterForm', () => {
     });
     await user.click(screen.getByRole('button', { name: 'Cadastrar' }));
 
-    expect(
-      await screen.findByText('Informe um CPF válido.'),
-    ).toBeInTheDocument();
+    expect(toast.error).toHaveBeenCalledWith('Informe um CPF válido.');
     expect(authService.register).not.toHaveBeenCalled();
   });
 
-  it('exibe erro quando documento já está cadastrado', async () => {
+  it('exibe toast quando documento já está cadastrado', async () => {
+    const { toast } = await import('sonner');
     vi.mocked(authService.register).mockRejectedValue({
       response: { status: 409 },
     });
@@ -176,8 +182,8 @@ describe('RegisterForm', () => {
     });
     await user.click(screen.getByRole('button', { name: 'Cadastrar' }));
 
-    expect(
-      await screen.findByText('Este documento já está cadastrado.'),
-    ).toBeInTheDocument();
+    await waitFor(() => {
+      expect(toast.error).toHaveBeenCalledWith('Este documento já está cadastrado.');
+    });
   });
 });
