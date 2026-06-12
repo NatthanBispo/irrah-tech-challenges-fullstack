@@ -4,8 +4,8 @@ Solução do desafio técnico BCB — plataforma de chat para empresas comunicar
 
 ## Stack
 
-- **Backend:** NestJS + TypeScript + Prisma + PostgreSQL
-- **Frontend:** React + TypeScript + Vite + TanStack Query + Tailwind CSS
+- **Backend:** NestJS + TypeScript + Prisma + PostgreSQL + Socket.IO
+- **Frontend:** React + TypeScript + Vite + TanStack Query + Tailwind CSS + socket.io-client
 - **Infra:** Docker Compose
 
 ## Premissas
@@ -24,10 +24,12 @@ Solução do desafio técnico BCB — plataforma de chat para empresas comunicar
 │   └── src/modules/
 │       ├── auth/            # POST /auth, POST /auth/register
 │       ├── conversations/   # GET /conversations, GET /:id/messages
-│       ├── messages/        # POST /messages + fila/worker
+│       ├── messages/        # POST /messages + fila/worker + WebSocket gateway
+│       ├── billing/         # top-up, balance, limite, conversão de plano
+│       ├── transactions/    # GET /transactions (histórico financeiro)
 │       └── recipients/      # GET /recipients
 ├── Frontend/
-│   └── src/features/        # auth, conversations, messages
+│   └── src/features/        # auth, conversations, messages, billing
 └── docker-compose.yml
 ```
 
@@ -80,6 +82,20 @@ npm install && npm run dev
 | GET | `/conversations/:id/messages` | Histórico (Bearer) |
 | POST | `/messages` | Enviar mensagem (Bearer) |
 | GET | `/recipients` | Destinatários para nova conversa (Bearer) |
+| GET | `/billing/balance` | Consulta saldo ou consumo (Bearer) |
+| POST | `/billing/top-up` | Recarga de saldo — pré-pago (Bearer) |
+| PATCH | `/billing/limit` | Ajusta limite mensal — pós-pago (Bearer) |
+| POST | `/billing/plan-conversion` | Converte entre planos (Bearer) |
+| GET | `/transactions` | Histórico de transações financeiras (Bearer) |
+
+### WebSocket
+
+O backend expõe um namespace Socket.IO em `ws://localhost:3000/messages`. O frontend conecta automaticamente ao entrar no dashboard, passando o token (`client.id`) no handshake. Eventos emitidos pelo servidor:
+
+| Evento | Payload | Quando |
+|--------|---------|--------|
+| `message:status_updated` | `{ messageId, conversationId, status }` | A cada transição de status na fila |
+| `message:new_reply` | `{ conversationId }` | Quando a resposta automática é criada |
 
 ### Login
 
@@ -114,8 +130,8 @@ cd Frontend && npm test
 
 ## Status
 
-**Backend:** auth, conversas, mensagens, fila com prioridade, validação financeira, PostgreSQL, Swagger, seed
+**Backend:** auth, conversas, mensagens, fila com prioridade, validação financeira, billing (top-up / limite / conversão), histórico de transações, WebSocket gateway, PostgreSQL, Swagger, seed, testes unitários (64 specs)
 
-**Frontend:** login, cadastro, dashboard com lista de conversas, chat com histórico/envio, status visuais, layout responsivo, nova conversa
+**Frontend:** login, cadastro, dashboard, lista de conversas, chat com histórico/envio, status visuais, filtro SMS/WhatsApp por cor, billing panel, layout responsivo, testes unitários (58 specs)
 
-**Integração:** fluxo completo login → conversas → mensagens; polling de status; tratamento 401/402
+**Integração:** fluxo completo login → conversas → mensagens; atualizações em tempo real via **WebSocket** (polling a cada 15 s como fallback); tratamento 401/402

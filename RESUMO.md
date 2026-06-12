@@ -17,6 +17,7 @@ O BCB é uma plataforma de chat para comunicação entre empresas e clientes fin
 - **nestjs-i18n** — internacionalização das mensagens de erro e validação
 - **class-validator / class-transformer** — validação dos DTOs de entrada
 - **Swagger (@nestjs/swagger)** — documentação automática da API em `/docs`
+- **Socket.IO (`@nestjs/websockets`, `@nestjs/platform-socket.io`)** — gateway WebSocket para push de status em tempo real
 - **Jest** — testes unitários e e2e
 
 ### Frontend
@@ -28,6 +29,7 @@ O BCB é uma plataforma de chat para comunicação entre empresas e clientes fin
 - **Tailwind CSS** — estilização utilitária
 - **Axios** — cliente HTTP com interceptor de autenticação e tratamento de 401
 - **sonner** — toasts de feedback (sucesso/erro)
+- **socket.io-client** — conexão WebSocket para receber atualizações de status em tempo real
 - **react-i18next** — internacionalização
 - **Vitest + React Testing Library** — testes unitários de componentes e hooks
 
@@ -46,6 +48,7 @@ módulo/
 ├── controllers/   # recebe HTTP, delega ao service
 ├── services/      # uma classe por caso de uso
 ├── repositories/  # abstração do Prisma por entidade
+├── gateways/      # WebSocket gateway (apenas em messages/)
 ├── dto/           # validação de entrada e forma da resposta
 └── entities/      # tipos de domínio
 ```
@@ -70,6 +73,7 @@ módulo/
 4. O `QueueWorkerService` roda a cada 2 segundos e chama `dequeue()` — urgentes são sempre processadas antes das normais (strict priority)
 5. A mensagem passa pelos status: `queued → processing → sent → delivered`
 6. Ao subir o servidor, a fila é hidratada do banco, recuperando mensagens `queued` que existiam antes de um eventual restart
+7. A cada mudança de status, o `QueueWorkerService` emite um evento WebSocket (`message:status_updated`) para a room do cliente, fazendo o frontend atualizar em tempo real sem necessidade de reload
 
 **Custos:**
 - Mensagem normal: R$ 0,25 (25 centavos)
@@ -118,18 +122,20 @@ O frontend segue uma arquitetura orientada a features:
 features/
 ├── auth/         # login, cadastro, contexto de sessão
 ├── conversations/ # lista de conversas, item com unreadCount
-├── messages/     # bolhas de chat, composer, status badge
+├── messages/     # bolhas de chat, composer, status badge, filtro SMS/WhatsApp
 └── billing/      # recarga, ajuste de limite, conversão de plano, histórico
 ```
 
 **Fluxo principal:**
 1. Usuário faz login → `AuthContext` salva token e dados do cliente no estado global
-2. Dashboard carrega lista de conversas via `useConversations` (TanStack Query)
+2. Dashboard conecta ao WebSocket (`useMessageSocket`) e carrega lista de conversas via `useConversations`
 3. Ao abrir uma conversa, `useMessages` carrega o histórico — o backend marca mensagens não lidas como `read` automaticamente
 4. Ao enviar mensagem, `useSendMessage` chama a API e atualiza otimisticamente o estado local:
    - Pré-pago: `balance` é atualizado com `currentBalance` retornado pela API
    - Pós-pago: `monthlyUsage` é incrementado localmente com o `cost` retornado
-5. O header do dashboard exibe: saldo (pré-pago) ou "Consumo: R$ X de R$ Y" (pós-pago)
+5. O WebSocket recebe `message:status_updated` e invalida o cache TanStack Query da conversa, forçando a atualização do status na tela
+6. O header do dashboard exibe: saldo (pré-pago) ou "Consumo: R$ X de R$ Y" (pós-pago)
+7. O chat exibe bolhas com cor diferente por tipo: **verde** (WhatsApp) e **azul** (SMS), com filtro por tipo no topo da conversa
 
 ---
 
@@ -137,8 +143,8 @@ features/
 
 | Camada | Ferramenta | Cobertura |
 |--------|-----------|-----------|
-| Backend unitário | Jest | 62 testes — services de auth, billing, transactions, messages, conversations |
-| Frontend unitário | Vitest + RTL | 56 testes — componentes, hooks, utils, contexto, serviços |
+| Backend unitário | Jest | 64 testes — services de auth, billing, transactions, messages, conversations, gateway |
+| Frontend unitário | Vitest + RTL | 58 testes — componentes, hooks, utils, contexto, serviços |
 
 Os testes unitários mockam todas as dependências externas (Prisma, API) e testam a lógica de negócio isolada.
 
